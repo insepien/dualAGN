@@ -1,0 +1,144 @@
+===================PSF+Sersic,n=1,same centers===================
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+Best fit params for PSF+Sersic,n=1,same centers
+X0_1: 49.487 
+Y0_1: 56.736 
+I_tot_1: 1373.191 
+PA_2: 65.974 
+ell_bulge_2: 0.377 
+n_2: 1.000 
+I_e_2: 22.977 
+r_e_2: 10.964 
+
+===================2 PSF+Sersic,n=1,same centers===================
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+X0		48.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+Best fit params for 2 PSF+Sersic,n=1,same centers
+X0_1: 53.414 
+Y0_1: 53.523 
+I_tot_1: 42547.234 
+PA_2: 115.124 
+ell_bulge_2: 0.410 
+n_2: 1.000 
+I_e_2: 1.364 
+r_e_2: 27.766 
+X0_2: 48.399 
+Y0_2: 57.674 
+I_tot_3: 37715.229 
+PA_4: 248.554 
+ell_bulge_4: 0.383 
+n_4: 1.000 
+I_e_4: 15.838 
+r_e_4: 10.806 
+
+===================PSF+Sersic,n=1,diff centers===================
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+Best fit params for PSF+Sersic,n=1,diff centers
+X0_1: 40.849 
+Y0_1: 89.412 
+I_tot_1: -386.870 
+X0_2: 49.637 
+Y0_2: 56.541 
+PA_2: 244.020 
+ell_bulge_2: 0.395 
+n_2: 1.000 
+I_e_2: 32.978 
+r_e_2: 9.377 
+
+===================2 PSF+Sersic,n=1,diff centers===================
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+X0		48.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION PointSource   # LABEL psf
+I_tot		19.537945703108253
+
+X0		56.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+X0		48.0		0.0,100.0
+Y0		52.0		0.0,100.0
+FUNCTION Sersic   # LABEL bulge
+PA		200.0		0.0,360.0
+ell_bulge		0.1		0.0,1.0
+n		1.0		fixed
+I_e		1.0		0.0,135.13360595703125
+r_e		20.0		0.0,100.0
+
+Best fit params for 2 PSF+Sersic,n=1,diff centers
+X0_1: 82.041 
+Y0_1: 0.000 
+I_tot_1: -133.371 
+X0_2: 48.000 
+Y0_2: 52.000 
+I_tot_2: 19.538 
+X0_3: 63.150 
+Y0_3: 56.461 
+PA_3: 200.000 
+ell_bulge_3: 0.100 
+n_3: 1.000 
+I_e_3: 1.000 
+r_e_3: 19.999 
+X0_4: 47.997 
+Y0_4: 37.024 
+PA_4: 199.900 
+ell_bulge_4: 0.100 
+n_4: 1.000 
+I_e_4: 1.000 
+r_e_4: 20.000 
+
