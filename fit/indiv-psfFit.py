@@ -137,10 +137,11 @@ if __name__ == "__main__":
         """
         script to construct ePSF from an exposure
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--imageFile", type=str, help="AGN image file name")
+    parser.add_argument("--imageFile", type=str, default="agn.fits", help="AGN image file name")
     parser.add_argument("--outdir", type=str, default='fitResults', help="directory for fit results")
-    parser.add_argument("--object", type=str, help="name of observed system")
+    parser.add_argument("--object", type=str, default = "J1215+1344", help="name of observed system")
     parser.add_argument("--psfFile", type=str, default="../psfConstruction/epsf2.fits", help="psf image file name")
+    parser.add_argument("--modelNum", type=int, default="1", help="model number, 0-3")
     args = parser.parse_args()
     
     # load images
@@ -148,25 +149,31 @@ if __name__ == "__main__":
     epsf = fits.getdata(args.psfFile)
     
     # build models and find best fits
-    models_n1, models_n4 = buildModels(args, imageAGN, itot = np.sum(epsf))
-    fitters_n1 = doFit(models_n1,epsf,imageAGN)
-    fitters_n4 = doFit(models_n4,epsf,imageAGN)
-
-    #save fit images
-    title_n1 = ["PSF+Sersic,n=1,same centers","2 PSF+Sersic,n=1,same centers",
-         "PSF+Sersic,n=1,diff cenls ters","2 PSF+Sersic,n=1,diff centers"]
-    title_n4 = ["PSF+Sersic,n=4,same centers","2 PSF+Sersic,n=4,same centers",
-         "PSF+Sersic,n=4,diff centers","2 PSF+Sersic,n=4,diff centers"]
-    plot_bestFit(fitters_n1, imageAGN, title_n1,"Fit results for n=1 using ePSF",'n1')
-    plot_bestFit(fitters_n4, imageAGN, title_n4,"Fit results for n=1 using ePSF",'n4')
+    models_n1, models_n4 = buildModels(args, imageAGN, itot = 130)
+    
+    psfOsamp = pyimfit.MakePsfOversampler(epsf, 4, (0,100,0,100))
+    osampleList = [psfOsamp]
+    
+    # fit only 1 model
+    model = models_n1[args.modelNum]
+    fitter = pyimfit.Imfit(model,psf=epsf)
+    fitter.loadData(imageAGN, psf_oversampling_list=osampleList, gain=9.942e-1, read_noise=0.22, original_sky=15.683)
+    fitter.doFit()
+    print("finish fit")
     
     #save best fit values
-    data_to_save = {}
-    for fitters, models, kind in zip([fitters_n1, fitters_n4], [models_n1, models_n4],['_n1','_n4']):
-        data_to_save['bestfit'+kind] = [fitters[i].getFitResult().params for i in range(4)]
-        data_to_save['fitConfig'+kind] = [models[i] for i in range(4)]
-    save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), args.object+"_fit.pkl")
+    data_to_save={}
+    data_to_save['fitResult'] = fitter.getFitResult()
+    data_to_save['fitConfig'] = model
+    save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), args.object+"_n1m1_fit.pkl")
     pickle.dump(data_to_save, open(save_path, 'wb'))
+    print("finish save")
+    
+    
+    
+    
+    
+    
     
 
         
