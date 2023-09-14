@@ -34,6 +34,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with open(args.chainfile, "rb") as file:
         c = pickle.load(file)
-    labels = ['X0_1','Y0_1','I_tot_1', 'PA_2','ell_bulge_2','I_e_2', 'r_e_2']
-    fig = PlotAllWalkers(c['chain'], labels, "Walkers for 1000 steps, n1, 2psf model")
+    labels0 = ['X0_1','Y0_1','I_tot_1', 'PA_2','ell_bulge_2','I_e_2', 'r_e_2']
+    labels1 = ['X0_1', 'Y0_1', 'I_tot_1', 'PA_2', 'ell_bulge_2', 'I_e_2','r_e_2', 'X0_2', 'Y0_2', 'I_tot_3', 'PA_4', 'ell_bulge_4', 'I_e_4', 'r_e_4']
+    fig = PlotAllWalkers(c['chain'], labels1, "Walkers for 1000 steps, n1, 2psf model")
     fig.savefig(args.walkFile)
