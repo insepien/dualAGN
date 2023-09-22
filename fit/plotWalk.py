@@ -1,6 +1,6 @@
 import pickle
 import matplotlib.pyplot as plt
-
+import pathlib
 
 plt.rcParams['image.cmap'] = 'Blues'
 plt.rcParams['font.family'] = 'monospace'
@@ -30,11 +30,16 @@ if __name__ == "__main__":
         """), formatter_class=RawDescriptionHelpFormatter)
 
     parser.add_argument("--chainfile", type=str, help="name of chain pickle file")
-    parser.add_argument("--walkFile", type=str, help="plot of walks file name")
+    parser.add_argument("--walkfile", type=str, help="plot of walks file name")
+    parser.add_argument("--chaindir", type=str, default="chainResults")
+    parser.add_argument("--modelNum", type=int)
     args = parser.parse_args()
-    with open(args.chainfile, "rb") as file:
+    filepath = pathlib.Path.joinpath(pathlib.Path(args.chaindir), args.chainfile)
+    with open(filepath, "rb") as file:
         c = pickle.load(file)
-    labels0 = ['X0_1','Y0_1','I_tot_1', 'PA_2','ell_bulge_2','I_e_2', 'r_e_2']
-    labels1 = ['X0_1', 'Y0_1', 'I_tot_1', 'PA_2', 'ell_bulge_2', 'I_e_2','r_e_2', 'X0_2', 'Y0_2', 'I_tot_3', 'PA_4', 'ell_bulge_4', 'I_e_4', 'r_e_4']
-    fig = PlotAllWalkers(c['chain'], labels1, "Walkers for 1000 steps, n1, 2psf model")
-    fig.savefig(args.walkFile)
+    labels = {}
+    labels[0] = ['X0_1','Y0_1','I_tot_1', 'PA_2','ell_bulge_2','I_e_2', 'r_e_2']
+    labels[1] = ['X0_1', 'Y0_1', 'I_tot_1', 'PA_2', 'ell_bulge_2', 'I_e_2','r_e_2', 'X0_2', 'Y0_2', 'I_tot_3', 'PA_4', 'ell_bulge_4', 'I_e_4', 'r_e_4']
+    fig = PlotAllWalkers(c['chain'], labels[args.modelNum], "Walkers n1, model "+str(args.modelNum))
+    savepath = pathlib.Path.joinpath(pathlib.Path(args.chaindir), args.walkfile)
+    fig.savefig(savepath)

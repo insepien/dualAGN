@@ -48,21 +48,23 @@ def lnPrior_func(params,imfitter,rmind):
     return 0.0
 
 
-def lnPosterior_pf(params, imfitter, lnPrior_func, rmInd, insInd):
+def lnPosterior_pf(params, imfitter, lnPrior_func, rmInd, ins_inds, labels):
     lnPrior = lnPrior_func(params, imfitter, rmInd)
     if not np.isfinite(lnPrior):
         return -np.inf
-    params = np.insert(params,insInd,1)
-    
-    lnLikelihood = -0.5 * imfitter.computeFitStatistic(params)
+    params = np.insert(params,ins_inds,1)
+    for i in range(len(params)):
+        print(labels[i], params[i])
+    # to sample prior
+    lnLikelihood = 0
     return lnPrior + lnLikelihood
 
 
-def run_emcee(args,p_bestfit, fitter,rmInd,insInd):
+def run_emcee(args,p_bestfit, fitter,rmInd):
     p_bestfit = np.delete(p_bestfit, rmInd)
     ndims, nwalkers = len(p_bestfit), 50
     initial_pos = [p_bestfit + 0.001*np.random.randn(ndims) for i in range(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndims, lnPosterior_pf, args=(fitter, lnPrior_func, rmInd, insInd))
+    sampler = emcee.EnsembleSampler(nwalkers, ndims, lnPosterior_pf, args=(fitter, lnPrior_func, rmInd))
     sampler.reset()
     final_state = sampler.run_mcmc(initial_pos,args.numsteps,progress=True)
     return sampler
@@ -99,10 +101,17 @@ if __name__ == "__main__":
     rm_inds = get_rm_inds(fitter)
     ins_inds = [rm_inds[0], rm_inds[1]-1]
     
+    #test posterior
+    p_bestfit = np.delete(bestfits, rm_inds)
+    ndims, nwalkers = len(p_bestfit), 50
+    initial_pos = [p_bestfit + 0.001*np.random.randn(ndims) for i in range(nwalkers)]
+    l = fitter.numberedParameterNames
+    lnPosterior_pf(initial_pos[0], fitter, lnPrior_func, rm_inds, ins_inds, l)
+    
+    
     # run mcmc
-    sampler = run_emcee(args, bestfits,fitter,rm_inds, ins_inds)
-    # save chain
-    saveChain(args, sampler)
+    #sampler = run_emcee(args, bestfits,fitter,rm_inds)
+    #saveChain(args, sampler)
     
     
     
