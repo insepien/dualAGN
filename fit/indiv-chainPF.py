@@ -48,21 +48,21 @@ def lnPrior_func(params,imfitter,rmind):
     return 0.0
 
 
-def lnPosterior_pf(params, imfitter, lnPrior_func, rmInd):
+def lnPosterior_pf(params, imfitter, lnPrior_func, rmInd, insInd):
     lnPrior = lnPrior_func(params, imfitter, rmInd)
     if not np.isfinite(lnPrior):
         return -np.inf
-    params = np.insert(params,rmInd,1)
+    params = np.insert(params,insInd,1)
     
     lnLikelihood = -0.5 * imfitter.computeFitStatistic(params)
     return lnPrior + lnLikelihood
 
 
-def run_emcee(args,p_bestfit, fitter,rmInd):
+def run_emcee(args,p_bestfit, fitter,rmInd,insInd):
     p_bestfit = np.delete(p_bestfit, rmInd)
     ndims, nwalkers = len(p_bestfit), 50
     initial_pos = [p_bestfit + 0.001*np.random.randn(ndims) for i in range(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndims, lnPosterior_pf, args=(fitter, lnPrior_func, rmInd))
+    sampler = emcee.EnsembleSampler(nwalkers, ndims, lnPosterior_pf, args=(fitter, lnPrior_func, rmInd, insInd))
     sampler.reset()
     final_state = sampler.run_mcmc(initial_pos,args.numsteps,progress=True)
     return sampler
@@ -87,8 +87,8 @@ if __name__ == "__main__":
     parser.add_argument("--inDir", type=str, default="fitResults", help="name of fit result directory")
     parser.add_argument("--psfFile", type=str, default="../psfConstruction/epsf2.fits", help="psf image file name")
     parser.add_argument("--imageFile", type=str, default="agn.fits",help="AGN image file name")
-    parser.add_argument("--fitFile", type=str, default = "J1215+1344_fit_.pkl", help="name of best fit result file")
-    parser.add_argument("--numsteps", type=int, help="number of steps in chain")
+    parser.add_argument("--fitFile", type=str, default = "J1215+1344_n1m1_fit.pkl", help="name of best fit result file")
+    parser.add_argument("--numsteps", type=int, default=3, help="number of steps in chain")
     parser.add_argument("--outdir", type=str,default="chainResults",help="chain directory")
     parser.add_argument("--chainFile", type=str,help="chain file name")
     #parser.add_argument("--modelNum", type=int, help="model number, 0-3")
@@ -96,10 +96,11 @@ if __name__ == "__main__":
     
     # get fitters and bestfits
     fitter, bestfits = getFits(args)
-    # get n indices
     rm_inds = get_rm_inds(fitter)
+    ins_inds = [rm_inds[0], rm_inds[1]-1]
+    
     # run mcmc
-    sampler = run_emcee(args, bestfits,fitter,rm_inds)
+    sampler = run_emcee(args, bestfits,fitter,rm_inds, ins_inds)
     # save chain
     saveChain(args, sampler)
     

@@ -165,7 +165,7 @@ if __name__ == "__main__":
     data_to_save={}
     data_to_save['fitResult'] = fitter.getFitResult()
     data_to_save['fitConfig'] = model
-    save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), args.object+"_n1m1_fit.pkl")
+    save_path = pathlib.Path.joinpath(pathlib.Path(args.outdir), args.object+"_n1m"+str(args.modelNum)+"_fit.pkl")
     pickle.dump(data_to_save, open(save_path, 'wb'))
     print("finish save")
     
