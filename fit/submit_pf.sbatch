@@ -12,4 +12,5 @@
 
 conda activate agn
 
-python indiv-chainPF.py --numsteps 1000 --chainFile chain_n1_1_1000_pf_871.pkl --fitFile J1215+1344_n1m1_fit.pkl
+python indiv-chainPF.py --numsteps 1000 --chainFile chain_n1m0.pkl --fitFile J1215+1344_n1m0_fit.pkl
+ 

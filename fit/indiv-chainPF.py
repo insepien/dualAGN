@@ -97,8 +97,11 @@ if __name__ == "__main__":
     # get fitters and bestfits
     fitter, bestfits = getFits(args)
     rm_inds = get_rm_inds(fitter)
-    ins_inds = [rm_inds[0], rm_inds[1]-1]
-    
+   
+    if len(rm_inds) == 2:
+        ins_inds = [rm_inds[0], rm_inds[1]-1]
+    else:
+        ins_inds = rm_inds 
     # run mcmc
     sampler = run_emcee(args, bestfits,fitter,rm_inds, ins_inds)
     # save chain
