@@ -8,6 +8,13 @@ import pathlib
 
 plt.rcParams['image.cmap'] = 'Blues'
 plt.rcParams['font.family'] = 'monospace'
+medium_font_size = 14 
+plt.rcParams['font.size'] = medium_font_size
+plt.rcParams['axes.labelsize'] = medium_font_size
+plt.rcParams['axes.titlesize'] = medium_font_size
+plt.rcParams['xtick.labelsize'] = medium_font_size
+plt.rcParams['ytick.labelsize'] = medium_font_size
+
 
 
 def find_highest_indices(arr):
@@ -141,7 +148,6 @@ if __name__ == "__main__":
     parser.add_argument("--outdir", type=str, default='fitResults', help="directory for fit results")
     parser.add_argument("--object", type=str, help="name of observed system")
     parser.add_argument("--psfFile", type=str, default="epsf.fits", help="psf image file name")
-    parser.add_argument("--twoMod", action="store_true")
     args = parser.parse_args()
     
     # load images
@@ -155,23 +161,17 @@ if __name__ == "__main__":
          "PSF+Sersic,n=1,diff cenls ters","2 PSF+Sersic,n=1,diff centers"]
     plot_bestFit(fitters_n1, imageAGN, title_n1,"Fit results for n=1 using ePSF",'n1')
     
-    # best fit for n4, can opt out if testing only n1
-    if args.twoMod:
-        fitters_n4 = doFit(models_n4,epsf,imageAGN)
-        title_n4 = ["PSF+Sersic,n=4,same centers","2 PSF+Sersic,n=4,same centers",
-         "PSF+Sersic,n=4,diff centers","2 PSF+Sersic,n=4,diff centers"]
-        plot_bestFit(fitters_n4, imageAGN, title_n4,"Fit results for n=4 using ePSF",'n4')
+
+    fitters_n4 = doFit(models_n4,epsf,imageAGN)
+    title_n4 = ["PSF+Sersic,n=4,same centers","2 PSF+Sersic,n=4,same centers",
+     "PSF+Sersic,n=4,diff centers","2 PSF+Sersic,n=4,diff centers"]
+    plot_bestFit(fitters_n4, imageAGN, title_n4,"Fit results for n=4 using ePSF",'n4')
     
     
     #save best fit values
-    fitters = [fitters_n1]
-    models = [models_n1]
-    names = ['_n1']
-    if args.twoMod:
-        fitters.append(fitters_n4)
-        models.append(models_n4)
-        names.append('_n4')
-        
+    fitters = [fitters_n1,fitters_n4]
+    models = [models_n1,models_n4]
+    names = ['_n1','_n4']
     data_to_save = {}
     for fitters, models, kind in zip(fitters, models,names):
         data_to_save['bestfit'+kind] = [fitters[i].getFitResult() for i in range(4)]

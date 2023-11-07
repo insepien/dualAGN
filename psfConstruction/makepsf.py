@@ -9,6 +9,7 @@ from IPython.display import Latex
 import sys
 from skimage.transform import resize
 import pathlib
+from matplotlib.ticker import LogFormatter
 
 from photutils.detection import find_peaks
 from photutils.aperture import CircularAperture
@@ -20,8 +21,15 @@ from photutils.psf import extract_stars
 from photutils.psf import EPSFBuilder
 from photutils import profiles
 
+#font settings
 plt.rcParams['font.family'] = 'monospace'
-plt.rcParams['image.cmap'] = 'gray'
+plt.rcParams['image.cmap'] = 'BuPu_r'
+medium_font_size = 14 
+plt.rcParams['font.size'] = medium_font_size
+plt.rcParams['axes.labelsize'] = medium_font_size
+plt.rcParams['axes.titlesize'] = medium_font_size
+plt.rcParams['xtick.labelsize'] = medium_font_size
+plt.rcParams['ytick.labelsize'] = medium_font_size
 
 
 def find_peak_tbl(data, args):
@@ -74,22 +82,41 @@ def plot_stars(stars,args):
     # plotting
     ncols=5
     nrows=len(stars)//ncols+1
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20),squeeze=True)
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 17),squeeze=True,sharex=True)
     ax = ax.ravel()
     for i in range(len(stars)):
         norm = simple_norm(stars[i], 'log', percent=99.0)
         ax[i].imshow(stars[i], norm=norm, origin='lower', cmap='viridis')
-        ax[i].set_title(i)
+        ax[i].set_title("Star "+str(i))
         sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
         sm.set_array([])
-        fig.colorbar(sm, ax=ax[i])
+        colorbar = fig.colorbar(sm, ax=ax[i], format=LogFormatter(labelOnlyBase=False), shrink=0.8)
+        colorbar.ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+    # turn of empty axis
+    [ax[i].axis("off") if ax[i].has_data()==False else ax[i].axis("on") for i in range(len(ax))]
     # save figure
     if args.remove:
         fig.savefig("psfResults/stars_filtered_"+args.object+".jpeg")
     else:
         fig.savefig("psfResults/stars_"+args.object+".jpeg")
 
-
+    
+def plotPSF(args,epsf,epsf_resized):
+    """plot original and resized psf"""
+    fig, ax = plt.subplots(1,2)
+    im1 = ax[0].imshow(epsf.data)
+    im2 = ax[1].imshow(epsf_resized)
+    for i in range(2):
+        cbar = fig.colorbar([im1,im2][i], orientation="horizontal")
+        cbar.set_label('Intensity')
+        ax[i].set_title(['Original ePSF', 'Resized ePSF'][i])
+        ax[i].set_xlabel("Pixels")
+        ax[i].set_ylabel("Pixels")
+    savepath = pathlib.Path.joinpath(pathlib.Path("psfResults"), args.psfImFile)
+    fig.tight_layout()
+    plt.savefig(savepath)
+    
+    
 def plot_radials(args, stars, epsf_resized):    
     # plot normalized radial profiles of stars
     fig = plt.figure()
@@ -104,20 +131,14 @@ def plot_radials(args, stars, epsf_resized):
     plt.plot(rp_psf.radius, rp_psf.profile,"b")
     
     # cosmetics
-    legend_handles = [plt.Line2D([], [], color='darkseagreen', label='stars'),plt.Line2D([], [], color='b', label='PSF')]
+    legend_handles = [plt.Line2D([], [], color='darkseagreen', label='stars'),plt.Line2D([], [], color='b', label='resized PSF')]
     plt.legend(handles=legend_handles)
-    plt.title("Radial profile of effective PSF and Stars")
+    plt.title("Radial profile of resized effective PSF and Stars")
+    plt.xlabel("Radius (pixels)")
+    plt.ylabel("Profile")
     fig.savefig("psfResults/rp_"+args.object+".jpeg")
 
     
-def plotPSF(args,epsf):
-    """plot psf"""
-    fig, ax = plt.subplots()
-    im = ax.imshow(epsf.data)
-    cbar = fig.colorbar(im)
-    ax.set_title('ePSF')
-    savepath = pathlib.Path.joinpath(pathlib.Path("psfResults"), args.psfImFile)
-    plt.savefig(savepath)
 
 def makePSF(args):
     # getting exposure data
@@ -148,7 +169,7 @@ def makePSF(args):
     plot_radials(args, stars, epsf_resized)
     
     #plot psf
-    plotPSF(args, epsf.data)
+    plotPSF(args, epsf, epsf_resized)
 
 
 
