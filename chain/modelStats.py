@@ -44,9 +44,10 @@ def plot_bestFit(fitter,params, imageAGN):
     ax[1].set_title("residual")
 
     for j, image in zip(np.arange(2), [im0,im1]):
-        cbar = fig.colorbar(image, ax=ax[j], shrink=0.6)
-
-    fig.suptitle("AGN model image and residuals from MCMC parameters, n="+str(args.modelnum))
+        cbar = fig.colorbar(image, ax=ax[j], shrink=0.6, orientation='horizontal')
+        cbar.set_label("Intensity")
+    
+    fig.suptitle("AGN model image and residuals from MCMC, "+str(args.modelnum+1)+" PSF model")
     fig.tight_layout()
     save_path = pathlib.Path.joinpath(pathlib.Path("chainResults"), args.object+"_resi_"+str(args.modelnum)+".jpg")
     fig.savefig(save_path)
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     
     # save posterior parameter, BIC, bayes calc
     data_save = {}
+    data_save['burn-in'] = args.cutoff
     data_save['paramNames'] = [element for indx, element in enumerate(fitter.numberedParameterNames) if indx not in rm_ind[args.modelnum]]
     data_save['params'] = params
     data_save['err'] = q
