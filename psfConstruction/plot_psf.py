@@ -58,7 +58,7 @@ def plot_psf_rProfile(epsf1,stars,objectName):
     ax[2].set_title(objectName + " PSF")
     fig.tight_layout()
     #fig.savefig("psf_plots/radial_profile_"+objectName+".pdf",bbox_inches='tight')
-    fig.savefig("psf_plots/"+objectName+"_radial_profile.jpg",bbox_inches="tight",dpi=300)
+    fig.savefig("psf_plots/"+objectName+"_4_radial_profile.jpg",bbox_inches="tight",dpi=300)
 
     
 def plot_point_subtraction(epsf1,stars,objectName):
@@ -80,7 +80,7 @@ def plot_point_subtraction(epsf1,stars,objectName):
     fig.tight_layout()
     fig.suptitle(objectName, y=1)
     #fig.savefig("psf_plots/point_subtract_"+objectName+".pdf",bbox_inches='tight')
-    fig.savefig("psf_plots/"+objectName+"_point_subtract.jpg",bbox_inches="tight",dpi=300)
+    fig.savefig("psf_plots/"+objectName+"_3_point_subtract.jpg",bbox_inches="tight",dpi=300)
     
     
 if __name__ == "__main__":

@@ -66,7 +66,7 @@ def plot_erred_star_peaks(nodups,indices_to_drop,objectName):
     fig.suptitle("Erred and duplicate detections of peaks",y=1.0)
     fig.tight_layout()
     #savepath = os.pathlib.join(
-    savepath="psf_plots/"+objectName+"_erred_stars.jpg"
+    savepath="psf_plots/"+objectName+"_0_erred_stars.jpg"
     fig.savefig(savepath,bbox_inches="tight",dpi=300)
 
     
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         """
         script to construct ePSF from an exposure
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--expPath", type=str, default="../../agn-data", help="path to exposures directory")
+    parser.add_argument("--expPath", type=str, default="~/agn-data", help="path to exposures directory")
     parser.add_argument("--inFile", type=str, help="exposure file")
     parser.add_argument("--threshold", type=float, default=400.0, help="brightness threshold for stars used to construct PSF")
     parser.add_argument("--size", type=int, default=35, help="size of star cutout")
@@ -157,11 +157,11 @@ if __name__ == "__main__":
     stars_tbl, stars = make_star_cutout(peaks_tbl,args)
     # plot star stamps
     if args.firstPass:
-        starPath = "psf_plots/"+objectName+"_stars.jpg"
+        starPath = "psf_plots/"+objectName+"_1_stars.jpg"
         plot_stars(stars,starPath)
     else:
         stars = drop_star_stamps(stars_tbl,args)
-        starPath = "psf_plots/"+objectName+"_stars_post_selection.jpg"
+        starPath = "psf_plots/"+objectName+"_2_stars_post_selection.jpg"
         plot_stars(stars,starPath)
         data_to_save = {}
         data_to_save['psf'], data_to_save['stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
