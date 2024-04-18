@@ -135,7 +135,7 @@ if __name__ == "__main__":
         """
         script to construct ePSF from an exposure
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--expPath", type=str, default="~/agn-data", help="path to exposures directory")
+    parser.add_argument("--expPath", type=str, default="../../agn-data", help="path to exposures directory")
     parser.add_argument("--inFile", type=str, help="exposure file")
     parser.add_argument("--threshold", type=float, default=400.0, help="brightness threshold for stars used to construct PSF")
     parser.add_argument("--size", type=int, default=35, help="size of star cutout")
