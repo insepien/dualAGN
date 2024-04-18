@@ -12,7 +12,7 @@
 
 conda activate agn
 
-files=$(ls ~/agn-data)
+files=$(ls ../../agn-data)
 
 for file in $files; do
     python3 makepsf.py --inFile "$file" --firstPass
