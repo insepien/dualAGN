@@ -66,7 +66,7 @@ def plot_erred_star_peaks(nodups,indices_to_drop,objectName):
     fig.suptitle("Erred and duplicate detections of peaks",y=1.0)
     fig.tight_layout()
     #savepath = os.pathlib.join(
-    savepath="psf_plots/"+objectName+"_0_erred_stars.jpg"
+    savepath="psf_plots/erred_stars/"+objectName+"_0_erred_stars.jpg"
     fig.savefig(savepath,bbox_inches="tight",dpi=300)
 
     
@@ -115,8 +115,9 @@ def make_star_cutout(peaks_tbl, args):
     return stars_tbl, stars
 
 
-def drop_star_stamps(stars_tbl,args):
-    stars_tbl.remove_rows(args.remove)
+def drop_star_stamps(stars_tbl,remove):
+    remove = [int(r) for r in remove]
+    stars_tbl.remove_rows(remove)
     nddata = NDData(data=data)
     stars = extract_stars(nddata, stars_tbl, size=35)
     return stars
@@ -140,31 +141,38 @@ if __name__ == "__main__":
     parser.add_argument("--threshold", type=float, default=400.0, help="brightness threshold for stars used to construct PSF")
     parser.add_argument("--size", type=int, default=35, help="size of star cutout")
     parser.add_argument("--firstPass", action='store_true')
-    parser.add_argument("--remove", nargs="+", type=int, help="list of stars to remove")
-    parser.add_argument("--psfImFile", type=str, default="psf.png", help="name of psf image file")
+    parser.add_argument("--makePSF", action='store_true')
     args = parser.parse_args()
     # get object name
     objectName = args.inFile.split("_")[2]
+    # get remove array
+    with open("remove.txt", "r") as f:
+        d = f.read().splitlines()   
+    r_dict = {}
+    for dd in d:
+        k,v = dd.split("__")
+        r_dict[k]= v
     # get exposure data
     expPath = os.path.join(args.expPath, args.inFile)
     data = fits.getdata(expPath)
     # find peaks and remove duplicates, mark erred detections
     nodups, indices_to_drop = find_peaks_remove_dups(data,args.threshold)
-    plot_erred_star_peaks(nodups,indices_to_drop,objectName)
     # drop erred detections 
     peaks_tbl = drop_erred_peaks(nodups, indices_to_drop)
     # make star stamps
     stars_tbl, stars = make_star_cutout(peaks_tbl,args)
     # plot star stamps
     if args.firstPass:
-        starPath = "psf_plots/"+objectName+"_1_stars.jpg"
+        plot_erred_star_peaks(nodups,indices_to_drop,objectName)
+        starPath = "psf_plots/stars0/"+objectName+"_1_stars.jpg"
         plot_stars(stars,starPath)
     else:
-        stars = drop_star_stamps(stars_tbl,args)
-        starPath = "psf_plots/"+objectName+"_2_stars_post_selection.jpg"
+        stars = drop_star_stamps(stars_tbl,r_dict[objectName].split(" "))
+        starPath = "psf_plots/stars_post/"+objectName+"_2_stars_post_selection.jpg"
         plot_stars(stars,starPath)
-        data_to_save = {}
-        data_to_save['psf'], data_to_save['stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
-        data_to_save['removed'] = args.remove
-        psfPath = "psf_pkls/psf_"+objectName+".pkl"
-        pickle.dump(data_to_save, open(psfPath, 'wb'))
+        if args.makePSF:
+            data_to_save = {}
+            data_to_save['psf'], data_to_save['stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
+            data_to_save['removed'] = args.remove
+            psfPath = "psf_pkls/psf_"+objectName+".pkl"
+            pickle.dump(data_to_save, open(psfPath, 'wb'))
