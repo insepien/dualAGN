@@ -166,13 +166,20 @@ if __name__ == "__main__":
         plot_erred_star_peaks(nodups,indices_to_drop,objectName)
         starPath = "psf_plots/stars0/"+objectName+"_1_stars.jpg"
         plot_stars(stars,starPath)
+        print("Done first pass: ", args.inFile)
     else:
         stars = drop_star_stamps(stars_tbl,r_dict[objectName].split(" "))
-        starPath = "psf_plots/stars_post/"+objectName+"_2_stars_post_selection.jpg"
-        plot_stars(stars,starPath)
         if args.makePSF:
             data_to_save = {}
-            data_to_save['psf'], data_to_save['stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
-            data_to_save['removed'] = args.remove
+            data_to_save['stars'] = stars
+            data_to_save['psf'], data_to_save['fitted_stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
             psfPath = "psf_pkls/psf_"+objectName+".pkl"
             pickle.dump(data_to_save, open(psfPath, 'wb'))
+            print("Done make psf: ", args.inFile)
+        else:
+            starPath = "psf_plots/stars_post/"+objectName+"_2_stars_post_selection.jpg"
+            plot_stars(stars,starPath)
+            print("Done post star: ", args.inFile)
+        
+            
+    
