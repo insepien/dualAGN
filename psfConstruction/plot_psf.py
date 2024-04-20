@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 from astropy.io import fits
 from photutils import profiles
+from matplotlib.backends.backend_pdf import PdfPages
 
 medium_font_size = 10
 plt.rcParams['font.size'] = medium_font_size
@@ -13,7 +14,7 @@ plt.rcParams['ytick.labelsize'] = medium_font_size
 plt.rcParams['font.family'] = 'monospace'
 
     
-def plot_psf_rProfile(epsf1,stars,objectName):
+def plot_psf_rProfile(epsf1,stars,objectName,pdf):
     """plot psf and stars radial profiles"""
     fig,ax = plt.subplots(1,3,figsize=(12,4))
 
@@ -57,11 +58,11 @@ def plot_psf_rProfile(epsf1,stars,objectName):
     fig.colorbar(im, ax=ax[2], shrink=0.7)
     ax[2].set_title(objectName + " PSF")
     fig.tight_layout()
-    #fig.savefig("psf_plots/radial_profile_"+objectName+".pdf",bbox_inches='tight')
-    fig.savefig("psf_plots/"+objectName+"_4_radial_profile.jpg",bbox_inches="tight",dpi=300)
+    pdf.savefig()
+    plt.close()
 
     
-def plot_point_subtraction(epsf1,stars,objectName):
+def plot_point_subtraction(epsf1,stars,objectName,pdf):
     """plot point source subtraction"""
     ncols = 5
     nrows = int(np.ceil(len(stars)/ncols))
@@ -78,9 +79,11 @@ def plot_point_subtraction(epsf1,stars,objectName):
     empty_axes = nrows*ncols-len(stars)
     [ax[-i].axis('off') for i in np.arange(1,empty_axes+1)]
     fig.tight_layout()
-    fig.suptitle(objectName, y=1)
+    fig.suptitle(objectName, y=0.99)
     #fig.savefig("psf_plots/point_subtract_"+objectName+".pdf",bbox_inches='tight')
-    fig.savefig("psf_plots/"+objectName+"_3_point_subtract.jpg",bbox_inches="tight",dpi=300)
+    #fig.savefig("psf_plots/"+objectName+"_3_point_subtract.jpg",bbox_inches="tight",dpi=300)
+    pdf.savefig()
+    plt.close()
     
     
 if __name__ == "__main__":
@@ -96,10 +99,12 @@ if __name__ == "__main__":
     with open('psf_pkls/'+args.inFile,"rb") as f:
         d = pickle.load(f)
     epsf1 = d['psf']
-    stars = d['stars']
-    # plot psf
-    
-    # plot radial profile
-    plot_psf_rProfile(epsf1,stars,objectName)
-    # point-source subtraction
-    plot_point_subtraction(epsf1,stars,objectName)
+    stars = d['fitted_stars']
+    # save to 1 pdf
+    pdf = PdfPages("psf_plots/radial_profile/"+objectName+".pdf")
+    with PdfPages("psf_plots/radial_profile/"+objectName+".pdf") as pdf:
+        # plot radial profile
+        plot_psf_rProfile(epsf1,stars,objectName, pdf)
+        # point-source subtraction
+        plot_point_subtraction(epsf1,stars,objectName, pdf)
+    print("Done: ", objectName)
