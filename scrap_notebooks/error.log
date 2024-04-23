@@ -12,3 +12,15 @@
 2024-01-10 17:16:48,320 - ERROR - An error occurred for 2psf+sersic,diffCenter,overall Sersic: 
 2024-01-11 12:23:43,010 - ERROR - An error occurred for 2psf+sersic,sameCenter: 
 2024-03-29 10:31:25,900 - ERROR - An error occurred for 2psf+sersic,diffCenter,overall Sersic: 
+2024-04-22 08:23:43,942 - ERROR - An error occurred for 1psf: name 'psf400new' is not defined
+2024-04-22 08:23:43,944 - ERROR - An error occurred for 1psf+sersic,sameCenter: name 'psf400new' is not defined
+2024-04-22 08:23:43,945 - ERROR - An error occurred for 2psf: name 'psf400new' is not defined
+2024-04-22 08:23:43,945 - ERROR - An error occurred for 1psf+sersic,1psf: name 'psf400new' is not defined
+2024-04-22 08:23:43,945 - ERROR - An error occurred for 2psf+sersic,sameCenter: name 'psf400new' is not defined
+2024-04-22 08:23:43,945 - ERROR - An error occurred for 1psf+sersic,diffCenter: name 'psf400new' is not defined
+2024-04-22 08:24:37,092 - ERROR - An error occurred for 1psf: too many values to unpack (expected 4)
+2024-04-22 08:24:37,248 - ERROR - An error occurred for 1psf+sersic,sameCenter: too many values to unpack (expected 4)
+2024-04-22 08:24:37,379 - ERROR - An error occurred for 2psf: too many values to unpack (expected 4)
+2024-04-22 08:24:48,098 - ERROR - An error occurred for 1psf+sersic,1psf: too many values to unpack (expected 4)
+2024-04-22 08:24:49,018 - ERROR - An error occurred for 2psf+sersic,sameCenter: too many values to unpack (expected 4)
+2024-04-22 08:24:50,685 - ERROR - An error occurred for 1psf+sersic,diffCenter: too many values to unpack (expected 4)
