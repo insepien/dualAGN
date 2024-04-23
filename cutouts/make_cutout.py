@@ -25,21 +25,17 @@ if __name__ == "__main__":
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
     parser = ArgumentParser(description=(
         """
-        script to construct ePSF from an exposure
+        script to make cutout
         """), formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("--cutSize", type=int, default=100, help="fits cutout size")
-    args = parser.parse_args()
+    parser.add_argument("--inFile", type=str, help="input exposure file")
+    args = parser.parse_args()    
     # reading coordinates from catalog
     catalog = pd.read_csv('catalog.txt', names=['name', 'ra', 'dec'], delimiter='\s+')
     coords = [SkyCoord(ra=catalog['ra'].loc[i]*u.deg, dec=catalog['dec'].loc[i]*u.deg) for i in range(len(catalog))]
     catalog['coords'] = coords
     catalog.set_index("name",inplace=True)
-    # get gal names and file names
-    dataPath = "../../agn-data"
-    fileNames = os.listdir(dataPath)
-    objectNames = [file.split("_")[2] for file in fileNames]
-    # make cutouts
-    for i in range(len(objectNames)):
-        exp_path = "../../agn-data/"+fileNames[i]
-        save_path = "data/"+objectNames[i]+'.fits'
-        download_image_save_cutout(exp_path, catalog['coords'].loc[objectNames[i]], (args.cutSize,args.cutSize), save_path)
+    objectName = args.inFile.split("_")[2]
+    exp_path = "../../agn-data/"+args.inFile
+    save_path = "data/"+objectName+'.fits'
+    download_image_save_cutout(exp_path, catalog['coords'].loc[objectName], (args.cutSize,args.cutSize), save_path)
