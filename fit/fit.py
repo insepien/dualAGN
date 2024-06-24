@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 import logging
+import glob
 
 medium_font_size = 14 
 plt.rcParams['font.size'] = medium_font_size
@@ -39,19 +40,20 @@ def find_sky(image, objectName, args):
     fig,ax = plt.subplots(1,2,figsize=(10,4))
     ax[0].hist(image.flatten(),bins=np.arange(np.min(image),np.max(image)))
     bgr = ax[1].hist(image.flatten(),bins=np.arange(np.min(image),20))
-    [ax[i].set_title(['Whole intensity range',"min to 20"][i]) for i in range(2)]
-    [ax[i].set_xlabel('intensity') for i in range(2)]
-    ax[0].set_ylabel('number of agns') 
-    sky = (bgr[1][np.where(bgr[0]==np.max(bgr[0]))]+bgr[1][np.where(bgr[0]==np.max(bgr[0]))[0][0]+1])/2
+    max_ind = np.where(bgr[0]==np.max(bgr[0]))[0][0]
+    sky = (bgr[1][max_ind]+bgr[1][max_ind+1])/2
     if args.plotSkyHist:
+        [ax[i].set_title(['Whole intensity range',"min to 20"][i]) for i in range(2)]
+        [ax[i].set_xlabel('intensity') for i in range(2)]
+        ax[0].set_ylabel('number of agns') 
         fig.savefig("skyHist_"+objectName+".jpg")
-    else:
-        return sky
+    return sky
 
 
 def makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
                  PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                 sigma, sigma_lim, Isky, Isky_lim):
+                 sigma, sigma_lim, Isky, Isky_lim,
+                 h1,h2,h_lim,alpha,alpha_lim):
     """Return Sersic, PSF, and Gaussian model parameter dictionary"""
     # Sersic
     """sersic = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell_bulge': [ell_ss, ell_lim[0],ell_lim[1]], 'n': [n_ss, 'fixed'],
@@ -64,26 +66,31 @@ def makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
     psf_dict = {'name': "PointSource", 'label': "psf", 'parameters': psf}
     """psf = {'I_tot' : [Itot, Itot_lim[0], Itot_lim[1]], 'PA':[PA_ss, PA_lim[0],PA_lim[1]] }
     psf_dict = {'name': "PointSourceRot", 'label': "psf", 'parameters': psf}"""
-    # Gaussians
-    gaussian = {'PA':[PA_ss, PA_lim[0],PA_lim[1]], 'ell':[ell_ss, ell_lim[0],ell_lim[1]], 
-                'I_0':[I_ss, Iss_lim[0],Iss_lim[1]], 'sigma':[sigma, sigma_lim[0], sigma_lim[1]]}
-    gaussian_dict = {'name': "Gaussian", 'label': "gaussian", 'parameters': gaussian}
-    # Flat sky
-    flatsky = {'I_sky': [Isky, Isky_lim[0], Isky_lim[1]]}
-    flatsky_dict = {'name': "FlatSky", 'label': "flat_sky", 'parameters':flatsky}
-    return sersic_dict, psf_dict, gaussian_dict, flatsky_dict
+    # flat bar
+    flatbar = {'PA':[PA_ss, PA_lim[0],PA_lim[1]], 'ell':[ell_ss, ell_lim[0],ell_lim[1]],
+               'deltaPA_max':[PA_ss, PA_lim[0],PA_lim[1]], 'I_0':[I_ss, Iss_lim[0],Iss_lim[1]],
+               'h1':[h1, h_lim[0],h_lim[1]], 'h2':[h2, h_lim[0],h_lim[1]], 
+               'r_break':[r_ss, rss_lim[0],rss_lim[1]], 'alpha':[alpha,alpha_lim[0],alpha_lim[1]]}
+    flatbar_dict = {'name': "FlatBar", 'label': "flat_bar", 'parameters':flatbar}
+    # Exponential
+    exponential = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell': [ell_ss, ell_lim[0],ell_lim[1]], 
+                   'I_0': [I_ss, Iss_lim[0],Iss_lim[1]], 'h': [h1, h_lim[0],h_lim[1]]}
+    exp_dict = {'name': "Exponential", 'label': "disk", 'parameters':exponential}
+    return sersic_dict, psf_dict, flatbar_dict, exp_dict
 
 
 def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, 
                     Xlim, Ylim, Xsslim, Ysslim,
                     PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
                     PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                    sigma, sigma_lim, midf, Isky, Isky_lim):
+                    sigma, sigma_lim, midf, Isky, Isky_lim,
+                    h1,h2,h_lim,alpha,alpha_lim):
     """Returns a function set dictionary with keys as model name, 
        values as model function set"""
-    sersic_dict, psf_dict, gaussian_dict, flatsky_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                 PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                 sigma, sigma_lim, Isky, Isky_lim)
+    sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
+                                                         PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
+                                                         sigma, sigma_lim, Isky, Isky_lim,
+                                                         h1,h2,h_lim,alpha,alpha_lim)
     #========function dictionary
     # psf
     funcset_dict_psf0 = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
@@ -98,14 +105,41 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
     # separate sersic
     funcset_dict_sersic0 = {'X0': [Xss0,Xsslim[0],Xsslim[1]], 'Y0': [Yss0,Ysslim[0],Ysslim[1]], 
                    'function_list': [sersic_dict]}
+    funcset_dict_sersic1 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
+                   'function_list': [sersic_dict]}
+    # flat bar
+    funcset_dict_flatbar = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict]}
+    funcset_dict_psfserbar = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
+                    'function_list': [psf_dict,sersic_dict,flatbar_dict]}
+    funcset_dict_psfbar0 = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict,psf_dict]}
+    funcset_dict_psfbar1 = {'X0': [X1,Xlim[0],Xlim[1]], 'Y0': [Y1, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict,psf_dict]}
+    funcset_dict_sersicbar = {'X0': [X1,Xlim[0],Xlim[1]], 'Y0': [Y1, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict,sersic_dict]}
+    # exponential
+    funcset_dict_exp = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [exp_dict]}
+    funcset_dict_psfserexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [psf_dict,sersic_dict,exp_dict]}
+    funcset_dict_serexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [sersic_dict,exp_dict]}
+    
     #========model dict
     funcset = {
+        "2sersic":[funcset_dict_sersic0,funcset_dict_sersic1],
+        "psf,2sersic":[funcset_dict_psf0,funcset_dict_sersic0,funcset_dict_sersic1],
+        "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
+        "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
+        "2psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
+        
         "1psf": [funcset_dict_psf0],
-        "1psf+sersic,sameCenter": [funcset_dict_psfser0],
-        "2psf": [funcset_dict_psf0, funcset_dict_psf1],
-        "1psf+sersic,1psf": [funcset_dict_psf1,funcset_dict_psfser0],
-        "2psf+sersic,sameCenter": [funcset_dict_psfser0,funcset_dict_psfser1],
-        "1psf+sersic,diffCenter":[funcset_dict_psf0,funcset_dict_sersic0]
+        "1psf+sersic": [funcset_dict_psfser0],
+        
+        "1psf+sersic+exp": [funcset_dict_psfserexp],
+        "psf,sersic+exp": [funcset_dict_serexp,funcset_dict_psf0],
+        
     }
     return funcset
 
@@ -113,24 +147,41 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
 def galaxy_model(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Ysslim,
                 PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
                 PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                sigma, sigma_lim,midf, Isky, Isky_lim):
+                sigma, sigma_lim,midf, Isky, Isky_lim,h1,h2,h_lim,alpha,alpha_lim):
     """return a dictionary of galaxy model with keys as model name"""
-    funcset = galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Ysslim,
-                    PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                    PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                    sigma, sigma_lim,midf, Isky, Isky_lim);
+    funcset = galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, 
+                                Xlim, Ylim, Xsslim, Ysslim,
+                                PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
+                                PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
+                                sigma, sigma_lim, midf, Isky, Isky_lim,
+                                h1,h2,h_lim,alpha,alpha_lim);
     models = {}
     for model in funcset:
         models[model]= pyimfit.ModelDescription.dict_to_ModelDescription({'function_sets':funcset[model]})
     return models
 
 
-def dofit_no_oversp(modelName, dataImage, psf, readnoise=0.22, expT=1, skylevel = 654.63, solver="NM"):
+def get_dofit_val(objectName):
+    mosfile = glob.glob("../../agn-data/2020-02-22_J_"+objectName+"*.mos.fits")[0]
+    expfile = glob.glob("../../exp_fits/2020-02-22_J_"+objectName+"*.exp.fits")[0]
+    with fits.open(mosfile) as hdul:
+        hdu = hdul[0]
+    sky_level = hdu.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
+    with fits.open(expfile) as hdul:
+        hdu = hdul[0]
+    exptime= hdu.header['EXPOSURE'] # actual exp time
+    gain = hdu.header['EGAIN'] #[e-/DU] in header
+    noise = hdu.header['EFFRN'] #[e-] in header
+    numcom = hdu.header['NCOADD'] #Number of Averaged Frames   
+    return exptime, noise, sky_level,numcom,gain
+
+
+def dofit_no_oversp(modelName, dataImage, psf, readnoise, expT, skylevel, ncom, gainlev, solver="NM"):
     """do fit with not oversampled psf
        """
     fitter = pyimfit.Imfit(models_n1[modelName],psf=psf)
-    fitter.loadData(dataImage, gain=9.942e-1,exp_time=expT, 
-                    read_noise=readnoise, original_sky=skylevel,n_combined=4)
+    fitter.loadData(dataImage, gain=gainlev,exp_time=expT, 
+                    read_noise=readnoise, original_sky=skylevel,n_combined=ncom)
     fitter.doFit(solver)
     fitConfig = fitter.getModelDescription()
     fitModelImage = fitter.getModelImage()
@@ -139,7 +190,7 @@ def dofit_no_oversp(modelName, dataImage, psf, readnoise=0.22, expT=1, skylevel 
     return fitConfig, fitModelImage, fitResult, param_names
 
 
-def fit_multi(models, efpsf, image):
+def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain):
     """fit all models in models
        return lists of model config, model images, fit results, and parameter names"""
     models = list(models.keys())
@@ -152,7 +203,9 @@ def fit_multi(models, efpsf, image):
     # fit all models
     for modelName in tqdm(models, desc="Fitting models"):
         try:
-            config, modelIm, fitRes, pname = dofit_no_oversp(modelName, dataImage=image, psf=epsf, solver="LM")
+            config, modelIm, fitRes, pname = dofit_no_oversp(modelName, dataImage=image, psf=epsf, 
+                                                             readnoise=noise, expT=exptime, skylevel = skylev, 
+                                                             ncom=numcom, gainlev=gain, solver="LM")
             configs.append(config)
             modelIms.append(modelIm)
             fitResults.append(fitRes)
@@ -173,7 +226,7 @@ def save_data(image,models,configs,modelIms,fitResults,pnames,objectName):
     savedata['modelImage'] = modelIms
     savedata['fitResults'] = fitResults
     savedata['paramNames'] = pnames
-    filename = "fit_pkls/"+objectName+".pkl"
+    filename = os.path.join(args.outDir, objectName+".pkl")
     pickle.dump(savedata,open(filename,"wb"))
     
 
@@ -186,32 +239,31 @@ if __name__=="__main__":
     parser.add_argument("--expPath", type=str, default="../cutouts/data", help="path to cut out directory")
     parser.add_argument("--psfPath", type=str, default="../psfConstruction/psf_pkls", help="path to psf directory")
     parser.add_argument("--inFile", type=str, help="cut out file")
-    parser.add_argument("--outDir", type=str, default="fit_pkls", help="directory for fit results")
+    parser.add_argument("--outDir", type=str, default="fit_pkls/", help="output directory")
     parser.add_argument("--plotSkyHist", action="store_true")
     args = parser.parse_args()
     
     # load cut out and psf file
     cutoutPath = os.path.join(args.expPath, args.inFile)
     imageAGN = fits.getdata(cutoutPath)
-    objectName = args.inFile.split(".")[0]
+    objectName = args.inFile[:10]
     psf_fileName = "psf_"+objectName+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
     with open (psfPath, "rb") as f:
         d = pickle.load(f)
     epsf = d['psf'].data
     
+    # get do fit params
+    exptime, noise, sky_level,numcom,gain = get_dofit_val(objectName)
+
     # cropping image and find centers for initial guess
-    imageAGNcrop, ys, xs = crop_image(imageAGN)
+    ys,xs = find_highest_indices(imageAGN)
     Imax = imageAGN.max()
-    itot=1500
-    framelim = imageAGNcrop.shape[0]
+    framelim = imageAGN.shape[0]
     midF=framelim//2
     # find background level and subtract
-    sky = find_sky(imageAGNcrop, objectName, args)
-    if len(sky) != 1:
-        sky = sky[-1]
-    print(sky)
-    imageAGNcrop_bs = imageAGNcrop - sky
+    sky = find_sky(imageAGN, objectName, args)
+    imageAGN_bs = imageAGN-sky
  
     # make models
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
@@ -219,11 +271,13 @@ if __name__=="__main__":
                          Xss0=xs[0], Yss0=ys[0], 
                          Xss1=xs[1], Yss1=ys[1],
                          Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
-                         PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=itot,
+                         PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
                          PA_lim=[0,360], ell_lim=[0.0,1.0], I_lim=[0.1,Imax],
                          Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
-                         sigma = 5, sigma_lim = [1,20],midf=midF, Isky = 2.5, Isky_lim =[0,10])
+                         sigma = 5, sigma_lim = [1,20],midf=midF, Isky = 2.5, Isky_lim =[0,10],
+                         h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
+
     # fit and save results
-    configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGNcrop_bs)
-    save_data(imageAGNcrop_bs,models_n1,configs,modelIms,fitResults,pnames,objectName)
+    configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
+    save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,objectName)
     print('Done: ', args.inFile)
