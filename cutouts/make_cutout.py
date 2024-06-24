@@ -4,6 +4,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.nddata import Cutout2D
 import pandas as pd
+import numpy as np
 import os
 
 def download_image_save_cutout(originalfile, position, size, cutoutfile):
@@ -27,7 +28,8 @@ if __name__ == "__main__":
         """
         script to make cutout
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--cutSize", type=int, default=100, help="fits cutout size")
+    parser.add_argument("--outDir", default="box", type=str, help="output directory")
+    parser.add_argument("--cutSize", type=int, help="fits cutout size")
     parser.add_argument("--inFile", type=str, help="input exposure file")
     args = parser.parse_args()    
     # reading coordinates from catalog
@@ -37,5 +39,11 @@ if __name__ == "__main__":
     catalog.set_index("name",inplace=True)
     objectName = args.inFile.split("_")[2]
     exp_path = "../../agn-data/"+args.inFile
-    save_path = "data/"+objectName+'.fits'
-    download_image_save_cutout(exp_path, catalog['coords'].loc[objectName], (args.cutSize,args.cutSize), save_path)
+    # make directory to store cutout of different sizes
+    boxdirname = "boxsize_"+objectName
+    #boxdir = os.mkdir(os.path.join(args.outDir,boxdirname))
+
+    # make cutout of size 80-119 and save
+    for i in np.arange(310,500,10):
+        save_path = os.path.join(args.outDir,boxdirname,objectName+'_'+str(i)+'.fits') 
+        download_image_save_cutout(exp_path, catalog['coords'].loc[objectName], (i,i), save_path)
