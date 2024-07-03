@@ -24,7 +24,7 @@ def plot_isophotes(ax,isolist,num_aper=10):
         ax.plot(x, y, color='white',linewidth="0.5")
 
 
-def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,plot_iso=False):
+def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
     """plot 2D model components and check residual with model image"""
     ncom = len(comp_names)
     fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(14,3))
@@ -34,7 +34,7 @@ def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,plot_is
     im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],norm='symlog'))
     ax[-1].set_title("model-comps")
     [fig.colorbar(im[i], ax=ax[i], shrink=0.7).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
-    if plot_iso:
+    if args.plotIso:
         for i in range(len(isolist_comps)):
              plot_isophotes(ax[i],isolist_comps[i],num_aper=5)
     fig.tight_layout()
@@ -90,10 +90,11 @@ if __name__=="__main__":
         """
         script to plot fit results
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--inDir", type=str, default="~/agn-result/fit", help="input directory of fit result files")
+    parser.add_argument("--inDir", type=str, default="~/agn-result/fit/components", help="input directory of fit result files")
     parser.add_argument("--inFile", type=str, help="fit result file")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit", help="directory for fit results")
     parser.add_argument("--outFile", type=str, help="output file")
+    parser.add_argument("--plotIso", action='store_true')
     args = parser.parse_args()
     
     # load fit component file
@@ -121,5 +122,5 @@ if __name__=="__main__":
                             isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                             comp_names=model.comp_name, fs=model.fit_result.fitStat)
             plot_model_components(pdf,comp_ims=model.comp_im,comp_names=model.comp_name, comp_pos=model.comp_pos,
-                                  isolist_comps=model.iso_comp,plot_iso=True)
+                                  isolist_comps=model.iso_comp,args=args)
     print("Done: ", objectName)
