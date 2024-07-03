@@ -67,10 +67,10 @@ if __name__=="__main__":
         """
         script to make fit result components and isophotes
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--psfPath", type=str, default="../psfConstruction/psf_pkls", help="path to psf directory")
-    parser.add_argument("--inDir", type=str, default="fit_pkls", help="path to fit result directory")
+    parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
+    parser.add_argument("--inDir", type=str, default="~/agn-result/fit", help="path to fit result directory")
     parser.add_argument("--inFile", type=str, help="fit result pickle file")
-    parser.add_argument("--outDir", type=str, default="fit_pkls/", help="output directory")
+    parser.add_argument("--outDir", type=str, default="~/agn-result/fit/components", help="output directory")
     parser.add_argument("--outFile", type=str,  help="output file name")
     args = parser.parse_args()
 
@@ -78,13 +78,13 @@ if __name__=="__main__":
     objectName = args.inFile[:10]
     psf_fileName = "psf_"+objectName+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
-    with open (psfPath, "rb") as fp:
+    with open (os.path.expanduser(psfPath), "rb") as fp:
         p = pickle.load(fp)
     epsf = p['psf'].data
 
     # load fit results
     fitPath = os.path.join(args.inDir, args.inFile)
-    with open (fitPath, "rb") as fd:
+    with open (os.path.expanduser(fitPath), "rb") as fd:
         d = pickle.load(fd)
     image = d['imageSS']
     model_names = list(d['modelNames'].keys())
@@ -99,9 +99,8 @@ if __name__=="__main__":
     framelim = image.shape[0]
     midF=framelim//2
     sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
-                                                                     PA_lim=[0,360], ell_lim=[0.0,1.0], I_lim=[0.1,Imax],
+                                                                     PA_lim=[0,360], ell_lim=[0.0,1.0],
                                                                      Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
-                                                                     sigma = 5, sigma_lim = [1,20], 
                                                                      h1=10,h2=10,h_lim=[0.1,framelim],alpha=0.1,alpha_lim=[0.1,framelim])
     
     isolist_data = make_data_isophotes(data=image,sma=30,midFrame=midF)
@@ -120,7 +119,7 @@ if __name__=="__main__":
         filename = os.path.join(args.outDir, args.outFile)
     else:
         filename = os.path.join(args.outDir, objectName+"_comp.pkl")
-    pickle.dump(data_to_save,open(filename,"wb"))
+    pickle.dump(data_to_save,open(os.path.expanduser(filename),"wb"))
     print("Done: "+objectName)
 
 

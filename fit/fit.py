@@ -53,15 +53,13 @@ def find_sky(image, objectName, args):
 def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, 
                     Xlim, Ylim, Xsslim, Ysslim,
                     PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                    PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                    sigma, sigma_lim, midf, Isky, Isky_lim,
-                    h1,h2,h_lim,alpha,alpha_lim):
+                    PA_lim, ell_lim,  Iss_lim, rss_lim, Itot_lim,
+                    midf, h1,h2,h_lim,alpha,alpha_lim):
     """Returns a function set dictionary with keys as model name, 
        values as model function set"""
     sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                                                         PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                                                         sigma, sigma_lim, Isky, Isky_lim,
-                                                         h1,h2,h_lim,alpha,alpha_lim)
+                                                                    PA_lim, ell_lim, Iss_lim, rss_lim, Itot_lim,
+                                                                    h1,h2,h_lim,alpha,alpha_lim)
     #========function dictionary
     # psf
     funcset_dict_psf0 = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
@@ -117,15 +115,14 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
 
 def galaxy_model(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Ysslim,
                 PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                sigma, sigma_lim,midf, Isky, Isky_lim,h1,h2,h_lim,alpha,alpha_lim):
+                PA_lim, ell_lim, Iss_lim, rss_lim, Itot_lim,
+                midf, h1,h2,h_lim,alpha,alpha_lim):
     """return a dictionary of galaxy model with keys as model name"""
     funcset = galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, 
                                 Xlim, Ylim, Xsslim, Ysslim,
                                 PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
-                                PA_lim, ell_lim, I_lim,  Iss_lim, rss_lim, Itot_lim,
-                                sigma, sigma_lim, midf, Isky, Isky_lim,
-                                h1,h2,h_lim,alpha,alpha_lim);
+                                PA_lim, ell_lim, Iss_lim, rss_lim, Itot_lim,
+                                midf, h1,h2,h_lim,alpha,alpha_lim);
     models = {}
     for model in funcset:
         models[model]= pyimfit.ModelDescription.dict_to_ModelDescription({'function_sets':funcset[model]})
@@ -133,8 +130,8 @@ def galaxy_model(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Yss
 
 
 def get_dofit_val(objectName):
-    mosfile = glob.glob("../../agn-data/2020-02-22_J_"+objectName+"*.mos.fits")[0]
-    expfile = glob.glob("../../exp_fits/2020-02-22_J_"+objectName+"*.exp.fits")[0]
+    mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/2020-02-22_J_"+objectName+"*.mos.fits"))[0]
+    expfile = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/2020-02-22_J_"+objectName+"*.exp.fits"))[0]
     with fits.open(mosfile) as hdul:
         hdu = hdul[0]
     sky_level = hdu.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
@@ -198,7 +195,7 @@ def save_data(image,models,configs,modelIms,fitResults,pnames,objectName):
     savedata['fitResults'] = fitResults
     savedata['paramNames'] = pnames
     filename = os.path.join(args.outDir, objectName+".pkl")
-    pickle.dump(savedata,open(filename,"wb"))
+    pickle.dump(savedata,open(os.path.expanduser(filename),"wb"))
     
 
 if __name__=="__main__":
@@ -207,20 +204,20 @@ if __name__=="__main__":
         """
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--expPath", type=str, default="../cutouts/data", help="path to cut out directory")
-    parser.add_argument("--psfPath", type=str, default="../psfConstruction/psf_pkls", help="path to psf directory")
+    parser.add_argument("--expPath", type=str, default="~/agn-result/box", help="path to cut out directory")
+    parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
     parser.add_argument("--inFile", type=str, help="cut out file")
-    parser.add_argument("--outDir", type=str, default="fit_pkls/", help="output directory")
+    parser.add_argument("--outDir", type=str, default="~/agn-result/fit", help="output directory")
     parser.add_argument("--plotSkyHist", action="store_true")
     args = parser.parse_args()
     
     # load cut out and psf file
     cutoutPath = os.path.join(args.expPath, args.inFile)
-    imageAGN = fits.getdata(cutoutPath)
+    imageAGN = fits.getdata(os.path.expanduser(cutoutPath))
     objectName = args.inFile[:10]
     psf_fileName = "psf_"+objectName+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
-    with open (psfPath, "rb") as f:
+    with open (os.path.expanduser(psfPath), "rb") as f:
         d = pickle.load(f)
     epsf = d['psf'].data
     
@@ -243,9 +240,9 @@ if __name__=="__main__":
                          Xss1=xs[1], Yss1=ys[1],
                          Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
                          PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
-                         PA_lim=[0,360], ell_lim=[0.0,1.0], I_lim=[0.1,Imax],
+                         PA_lim=[0,360], ell_lim=[0.0,1.0],
                          Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
-                         sigma = 5, sigma_lim = [1,20],midf=midF, Isky = 2.5, Isky_lim =[0,10],
+                         midf=midF, 
                          h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
 
     # fit and save results
