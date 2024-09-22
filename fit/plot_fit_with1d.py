@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import FormatStrFormatter
 from modelComponents import modelComps
+import matplotlib.gridspec as gridspec
 
 
 medium_font_size = 14 
@@ -41,12 +42,15 @@ def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
     pdf.savefig();
 
 
-def fit_stat_1d(iso_data,iso_model,cut=35):
-    """calculate 1d chi squared"""
-    sma_cut = iso_data.sma[cut-1]
-    diff = iso_data.intens[:cut]-iso_model.intens[:cut]
-    chi_square1d = np.sum(diff**2 / np.sqrt(iso_data.intens[:cut]))
-    return chi_square1d,sma_cut
+def fit_stat_1d(iso_data,iso_model,cut=0.8):
+    """calculate 1d chi squared, cut to 80% of data"""
+    cut_index = int(np.round(len(iso_data.sma)*cut))
+    sma_cut = iso_data.sma[cut_index]
+    diff = iso_data.intens[:cut_index]-iso_model.intens[:cut_index]
+    chi_square1d = np.sum(diff**2 / np.sqrt(iso_data.intens[:cut_index]))
+    diff_full = iso_data.intens-iso_model.intens
+    chi_square1d_full = np.sum(diff_full**2 / np.sqrt(np.abs(iso_data.intens)))
+    return chi_square1d,sma_cut,chi_square1d_full
 
 def fit_stat_2d(image,model_im,sky_level,args):
     """calculate 2d weighted by uncertainty chi squared"""
@@ -58,29 +62,47 @@ def fit_stat_2d(image,model_im,sky_level,args):
     chi2dw = np.sum(diff2d**2/np.sqrt(imcrop))
     return chi2dw
 
-def plot_everything(pdf,image,m,modelname,isolist_data,isolist_comps,comp_names,fs):
-    chi_1d,sma_cut = fit_stat_1d(iso_data=isolist_data,iso_model=isolist_comps[-1])
-    # plot everything 
-    fig,ax = plt.subplots(1,4,figsize=(14,3),gridspec_kw={'width_ratios': [1, 1, 1, 1.5]})
-    #norms = [simple_norm([image, m, image-m][i],'log') for i in range(3)]
-    im = [ax[i].imshow([image, m, image-m][i], norm='symlog') for i in range(3)]
-    cbar = [fig.colorbar(im[i],ax=ax[i],shrink=0.5) for i in range(3)]
-    #[ax[i].set_title(['data',f"model: {modelname}",f'residual, $\chi^2$={chi_2d:.1f} ({args.cut2d}x{args.cut2d} pix)'][i]) for i in range(3)]
-    [ax[i].set_title(['data',f"model: {modelname}",f'residual, $\chi^2$={fs:.1f}'][i]) for i in range(3)]
+def plot_1isophote(ax,sma,isolist):
+    """plot aperatures on image"""
+    iso = isolist.get_closest(sma)
+    x, y, = iso.sampled_coordinates()
+    ax.plot(x, y, color='white',linewidth="0.3")
 
-    ax[-1].plot(isolist_data.sma**0.25,isolist_data.intens,label="data",c="k",alpha=0.3)
-    ax[-1].plot(isolist_comps[-1].sma**0.25,isolist_comps[-1].intens,c='k',linestyle="",marker="o",markersize=1,label="model")
-    ax[-1].plot(isolist_comps[-1].sma**0.25,isolist_data.intens-isolist_comps[-1].intens,c='magenta',alpha=0.5,lw=1,label="residual")
-    [ax[-1].plot(isolist_comps[i].sma**0.25,isolist_comps[i].intens,label=comp_names[i],linestyle="--") for i in range(len(comp_names)-1)]
-    ax[-1].axvline(x=sma_cut**0.25,label=f"$sma_\\chi$={sma_cut:.1f}",lw=1,alpha=0.5)
-    ax[-1].set_yscale('log')
-    ax[-1].set_ylim(ymin=1)
-    ax[-1].set_title(f"1D profile, $\chi^2$={chi_1d:.1f}")
-    ax[-1].set_ylabel("log(I)")
-    ax[-1].set_xlabel("sma$^{0.25}$")
-    ax[-1].legend(fontsize=10,loc='center left', bbox_to_anchor=(1, 0.5));
+def plot_everything(pdf,image,m,modelname,isolist_data,isolist_comps,comp_names,fs,fsr,fslabel,args):
+    chi_1d,sma_cut,chi_square1d_full = fit_stat_1d(iso_data=isolist_data,iso_model=isolist_comps[-1])
+    fig = plt.figure(figsize=(14, 4))
+    # Create grid and add subplots
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5])
+    ax1 = fig.add_subplot(gs[:, 0]) 
+    ax2 = fig.add_subplot(gs[:, 1])
+    ax3 = fig.add_subplot(gs[:, 2])
+    ax4a = fig.add_subplot(gs[0, 3]) 
+    ax4b = fig.add_subplot(gs[1, 3],sharex=ax4a)  
+    plt.setp(ax4a.get_xticklabels(), visible=False)
+
+    #plotting
+    ax = [ax1,ax2,ax3,ax4a,ax4b]
+    im = [ax[i].imshow([image, m, image-m][i], norm='symlog') for i in range(3)]
+    [fig.colorbar(im[i],ax=ax[i],shrink=0.5) for i in range(3)]
+
+    [ax[i].set_title([args.oname,f"model: {modelname}",f'residual,\n $\chi^2$={fs:.0f}, $\chi^2_r$={fsr:.2f}'][i]) for i in range(3)]
+    ax[3].plot(isolist_data.sma**0.25,isolist_data.intens,label="data",c="k",alpha=0.3)
+    ax[3].plot(isolist_comps[-1].sma**0.25,isolist_comps[-1].intens,c='k',linestyle="",marker="o",markersize=1,label="model")
+    [ax[3].plot(isolist_comps[i].sma**0.25,isolist_comps[i].intens,label=comp_names[i],linestyle="--") for i in range(len(comp_names)-1)]
+    ax[3].axvline(x=sma_cut**0.25,label=f"$sma_\\chi$={sma_cut:.1f}",lw=1,alpha=0.5)
+    ax[4].plot(isolist_comps[-1].sma**0.25,isolist_data.intens-isolist_comps[-1].intens,c='magenta',alpha=0.5,lw=1,label="residual")
+
+    plot_1isophote(ax[0],sma=sma_cut,isolist=isolist_data)
+    ax[3].set_yscale('log')
+    ax[3].set_ylim(ymin=1)
+    ax[3].set_title(f"1D profile, $\chi^2_c$={chi_1d:.2f},$\chi^2_f$={chi_square1d_full:.2f}")
+    ax[3].set_ylabel("I")
+    ax[4].set_ylabel("$\Delta$ I")
+    ax[4].set_xlabel("sma$^{0.25}$")
+    ax[3].legend(fontsize=10,loc='center left', bbox_to_anchor=(1, 0.5))
 
     fig.tight_layout()
+    gs.update(hspace=0.1)
     pdf.savefig();
 
 
@@ -90,17 +112,17 @@ if __name__=="__main__":
         """
         script to plot fit results
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--inDir", type=str, default="~/agn-result/fit/components", help="input directory of fit result files")
-    parser.add_argument("--inFile", type=str, help="fit result file")
-    parser.add_argument("--outDir", type=str, default="~/agn-result/fit", help="directory for fit results")
+    parser.add_argument("--inDir", type=str, default="~/agn-result/fit/final_comps", help="input directory of fit result files")
+    parser.add_argument("--oname", type=str, help="object name")
+    parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_plots", help="directory for fit results")
     parser.add_argument("--outFile", type=str, help="output file")
     parser.add_argument("--plotIso", action='store_true')
+    parser.add_argument("--useAIC", action='store_true')
     args = parser.parse_args()
     
     # load fit component file
-    objectName = args.inFile[:10]
-    fitPath = os.path.expanduser(os.path.join(args.inDir, args.inFile))
-    with open (fitPath, "rb") as f:
+    compPath = os.path.expanduser(os.path.join(args.inDir, args.oname+"_comp.pkl"))
+    with open (compPath, "rb") as f:
         d = pickle.load(f)
     imageAGN = d['agn']
     isolist_agn= d['agn-iso']
@@ -108,19 +130,26 @@ if __name__=="__main__":
     if args.outFile:
         savepath = os.path.expanduser(os.path.join(args.outDir,args.outFile))
     else:
-        savepath = os.path.expanduser(os.path.join(args.outDir,objectName+".pdf"))
+        savepath = os.path.expanduser(os.path.join(args.outDir,args.oname+".pdf"))
     pdf = PdfPages(savepath)
 
     # get model names
     model_names = list(d.keys())[:-2]
-    sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
+    if args.useAIC:
+        sorted_ind = np.argsort([d[m].fit_result.aic for m in model_names])
+        fs_lab = "AIC"
+        fstat='aic'
+    else:
+        sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
+        fs_lab = "$\chi^2$"
+        fstat = 'fitStat'
     
     with PdfPages(savepath) as pdf:
         for i in sorted_ind:
             model = d[model_names[i]]
             plot_everything(pdf,image=imageAGN,m=model.comp_im[-1],modelname= model.model_name,
                             isolist_data=isolist_agn,isolist_comps=model.iso_comp,
-                            comp_names=model.comp_name, fs=model.fit_result.fitStat)
+                            comp_names=model.comp_name, fs=model.fit_result[fstat], fsr=model.fit_result.fitStatReduced, fslabel=fs_lab,args=args)
             plot_model_components(pdf,comp_ims=model.comp_im,comp_names=model.comp_name, comp_pos=model.comp_pos,
                                   isolist_comps=model.iso_comp,args=args)
-    print("Done: ", objectName)
+    print("Done: ", args.oname)

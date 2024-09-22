@@ -40,12 +40,16 @@ if __name__ == "__main__":
     coords = [SkyCoord(ra=catalog['ra'].loc[i]*u.deg, dec=catalog['dec'].loc[i]*u.deg) for i in range(len(catalog))]
     catalog['coords'] = coords
     catalog.set_index("name",inplace=True)
-    exp_path = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/2020-02-22_J_"+args.objectName+"*.mos.fits"))[0]
+    exp_path = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/*"+args.objectName+"*.fits"))[0]
 
-    boxdirname = "boxsize_"+args.objectName
-    if args.makeMulti:
-        # make directory to store cutout of different sizes
-        boxdir = os.mkdir(os.path.join(args.outDir,boxdirname))
+    
+
+    if args.makeMulti:  
+        boxdirname = "boxsize_"+args.objectName
+        dir_path = os.path.expanduser(os.path.join(args.outDir,boxdirname))
+        # check if directory exists for the agn
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
         # make cutout of different sizes and save
         for i in np.arange(100,500,10):
             save_path = os.path.join(args.outDir,boxdirname,args.objectName+'_'+str(i)+'.fits') 
@@ -53,7 +57,7 @@ if __name__ == "__main__":
     
 
     if args.cutSize:
-        save_path = os.path.join(args.outDir,boxdirname,args.objectName+'_'+str(args.cutSize)+'.fits')
+        save_path = os.path.join(args.outDir,args.objectName+'_'+str(args.cutSize)+'.fits')
         download_image_save_cutout(exp_path, catalog['coords'].loc[args.objectName], (args.cutSize, args.cutSize), save_path)
 
-    print("Finished")
+    print("Finished "+ args.objectName)

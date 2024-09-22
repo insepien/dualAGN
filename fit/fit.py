@@ -57,7 +57,7 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
                     midf, h1,h2,h_lim,alpha,alpha_lim):
     """Returns a function set dictionary with keys as model name, 
        values as model function set"""
-    sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
+    sersic_dict0, sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
                                                                     PA_lim, ell_lim, Iss_lim, rss_lim, Itot_lim,
                                                                     h1,h2,h_lim,alpha,alpha_lim)
     #========function dictionary
@@ -76,20 +76,12 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
                    'function_list': [sersic_dict]}
     funcset_dict_sersic1 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
                    'function_list': [sersic_dict]}
-    # flat bar
-    funcset_dict_flatbar = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
-                    'function_list': [flatbar_dict]}
-    funcset_dict_psfserbar = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
-                    'function_list': [psf_dict,sersic_dict,flatbar_dict]}
-    funcset_dict_psfbar0 = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
-                    'function_list': [flatbar_dict,psf_dict]}
-    funcset_dict_psfbar1 = {'X0': [X1,Xlim[0],Xlim[1]], 'Y0': [Y1, Ylim[0],Ylim[1]], 
-                    'function_list': [flatbar_dict,psf_dict]}
-    funcset_dict_sersicbar = {'X0': [X1,Xlim[0],Xlim[1]], 'Y0': [Y1, Ylim[0],Ylim[1]], 
-                    'function_list': [flatbar_dict,sersic_dict]}
+    funcset_dict_sersicx2 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
+                   'function_list': [sersic_dict,sersic_dict0]}
+
     # exponential
-    funcset_dict_exp = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
-                    'function_list': [exp_dict]}
+    funcset_dict_serbar = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [sersic_dict,flatbar_dict]}
     funcset_dict_psfserexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
                     'function_list': [psf_dict,sersic_dict,exp_dict]}
     funcset_dict_serexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
@@ -97,17 +89,19 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
     
     #========model dict
     funcset = {
-        "2sersic":[funcset_dict_sersic0,funcset_dict_sersic1],
-        "psf,2sersic":[funcset_dict_psf0,funcset_dict_sersic0,funcset_dict_sersic1],
+        "sersic,sersic":[funcset_dict_sersic0,funcset_dict_sersic1],
+        "sersic+sersic":[funcset_dict_sersicx2],
+        
+        "psf,sersic+sersic":[funcset_dict_psf0,funcset_dict_sersicx2],
         "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
-        "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
+        "psf+sersic,sersic": [funcset_dict_sersic1,funcset_dict_psfser0],
         "2psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
         
-        "1psf": [funcset_dict_psf0],
-        "1psf+sersic": [funcset_dict_psfser0],
-        
-        "1psf+sersic+exp": [funcset_dict_psfserexp],
-        "psf,sersic+exp": [funcset_dict_serexp,funcset_dict_psf0],
+        "sersic": [funcset_dict_sersic0],
+        "psf+sersic": [funcset_dict_psfser0],
+        "psf,sersic": [funcset_dict_psf0,funcset_dict_sersic1],
+        "psf,sersic+exp":[funcset_dict_psf0,funcset_dict_serexp],
+        "sersic+bar":[funcset_dict_serbar ]
         
     }
     return funcset
@@ -130,8 +124,8 @@ def galaxy_model(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Yss
 
 
 def get_dofit_val(objectName):
-    mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/2020-02-22_J_"+objectName+"*.mos.fits"))[0]
-    expfile = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/2020-02-22_J_"+objectName+"*.exp.fits"))[0]
+    mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+objectName+"*.mos.fits"))[0]
+    expfile = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/*"+objectName+"*.exp.fits"))[0]
     with fits.open(mosfile) as hdul:
         hdu = hdul[0]
     sky_level = hdu.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
@@ -204,25 +198,28 @@ if __name__=="__main__":
         """
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--expPath", type=str, default="~/agn-result/box", help="path to cut out directory")
-    parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
-    parser.add_argument("--inFile", type=str, help="cut out file")
-    parser.add_argument("--outDir", type=str, default="~/agn-result/fit", help="output directory")
+    parser.add_argument("--inDir", type=str, default="~/agn-result/box/final_cut", help="path to cut out directory")
+    parser.add_argument("--psfPath", type=str, default="~/agn-result/psf_pkls", help="path to psf directory")
+    parser.add_argument("--oname", type=str, help="object name")
+    parser.add_argument("--inFile", type=str, help="cutout file")
+    parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_fit", help="output directory")
     parser.add_argument("--plotSkyHist", action="store_true")
     args = parser.parse_args()
     
     # load cut out and psf file
-    cutoutPath = os.path.join(args.expPath, args.inFile)
+    if args.inFile:
+        cutoutPath = os.path.expanduser("~/agn-result/box/final_cut/"+args.inFile)
+    else:
+        cutoutPath = glob.glob(os.path.expanduser("~/agn-result/box/final_cut/"+args.oname+"*"))[0]
     imageAGN = fits.getdata(os.path.expanduser(cutoutPath))
-    objectName = args.inFile[:10]
-    psf_fileName = "psf_"+objectName+".pkl"
+    psf_fileName = "psf_"+args.oname+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
     with open (os.path.expanduser(psfPath), "rb") as f:
         d = pickle.load(f)
     epsf = d['psf'].data
     
     # get do fit params
-    exptime, noise, sky_level,numcom,gain = get_dofit_val(objectName)
+    exptime, noise, sky_level,numcom,gain = get_dofit_val(args.oname)
 
     # cropping image and find centers for initial guess
     ys,xs = find_highest_indices(imageAGN)
@@ -230,7 +227,7 @@ if __name__=="__main__":
     framelim = imageAGN.shape[0]
     midF=framelim//2
     # find background level and subtract
-    sky = find_sky(imageAGN, objectName, args)
+    sky = find_sky(imageAGN, args.oname, args)
     imageAGN_bs = imageAGN-sky
  
     # make models
@@ -247,5 +244,5 @@ if __name__=="__main__":
 
     # fit and save results
     configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
-    save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,objectName)
-    print('Done: ', args.inFile)
+    save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,args.oname)
+    print('Done: ', args.oname)
