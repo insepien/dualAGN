@@ -1,0 +1,3 @@
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:37: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
+  [fig.colorbar(im[i], ax=ax[i], shrink=0.7).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
+Done:  J0752+2019
