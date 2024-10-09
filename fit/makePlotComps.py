@@ -106,7 +106,7 @@ if __name__=="__main__":
     
     isolist_data = make_data_isophotes(data=image,sma=args.sma,midFrame=midF,pa0=args.pa)
     data_to_save = {}
-    for i in range(len(model_names)):
+    for i in range(len(configs)):
         comp_ims, comp_pos, comp_names = make_model_components(configs[i],imshape=image.shape[0])
         comp_ims.append(model_images[i])
         comp_names.append("model")

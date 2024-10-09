@@ -40,7 +40,7 @@ if __name__ == "__main__":
     coords = [SkyCoord(ra=catalog['ra'].loc[i]*u.deg, dec=catalog['dec'].loc[i]*u.deg) for i in range(len(catalog))]
     catalog['coords'] = coords
     catalog.set_index("name",inplace=True)
-    exp_path = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/*"+args.objectName+"*.fits"))[0]
+    exp_path = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.objectName+"*.fits"))[0]
 
     
 
