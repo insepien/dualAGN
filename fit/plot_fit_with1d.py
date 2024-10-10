@@ -46,11 +46,12 @@ def fit_stat_1d(iso_data,iso_model,cut=0.8):
     """calculate 1d chi squared, cut to 80% of data"""
     cut_index = int(np.round(len(iso_data.sma)*cut))
     sma_cut = iso_data.sma[cut_index]
-    diff = iso_data.intens[:cut_index]-iso_model.intens[:cut_index]
-    chi_square1d = np.sum(diff**2 / np.sqrt(iso_data.intens[:cut_index]))
-    diff_full = iso_data.intens-iso_model.intens
-    chi_square1d_full = np.sum(diff_full**2 / np.sqrt(np.abs(iso_data.intens)))
+    diff = iso_data.intens[1:cut_index]-iso_model.intens[1:cut_index]
+    chi_square1d = np.sum((diff/iso_data.rms[1:cut_index])**2)
+    diff_full = iso_data.intens[1:]-iso_model.intens[1:]
+    chi_square1d_full = np.sum((diff_full/iso_data.rms[1:])**2)
     return chi_square1d,sma_cut,chi_square1d_full
+
 
 def fit_stat_2d(image,model_im,sky_level,args):
     """calculate 2d weighted by uncertainty chi squared"""
@@ -86,19 +87,20 @@ def plot_everything(pdf,image,m,modelname,isolist_data,isolist_comps,comp_names,
     [fig.colorbar(im[i],ax=ax[i],shrink=0.5) for i in range(3)]
 
     [ax[i].set_title([args.oname,f"model: {modelname}",f'residual,\n $\chi^2$={fs:.0f}, $\chi^2_r$={fsr:.2f}'][i]) for i in range(3)]
-    ax[3].plot(isolist_data.sma**0.25,isolist_data.intens,label="data",c="k",alpha=0.3)
-    ax[3].plot(isolist_comps[-1].sma**0.25,isolist_comps[-1].intens,c='k',linestyle="",marker="o",markersize=1,label="model")
-    [ax[3].plot(isolist_comps[i].sma**0.25,isolist_comps[i].intens,label=comp_names[i],linestyle="--") for i in range(len(comp_names)-1)]
-    ax[3].axvline(x=sma_cut**0.25,label=f"$sma_\\chi$={sma_cut:.1f}",lw=1,alpha=0.5)
-    ax[4].plot(isolist_comps[-1].sma**0.25,isolist_data.intens-isolist_comps[-1].intens,c='magenta',alpha=0.5,lw=1,label="residual")
+    ax[3].plot(isolist_data.sma,isolist_data.intens,label="data",c="k",alpha=0.3)
+    ax[3].plot(isolist_comps[-1].sma,isolist_comps[-1].intens,c='k',linestyle="",marker="o",markersize=1,label="model")
+    [ax[3].plot(isolist_comps[i].sma,isolist_comps[i].intens,label=comp_names[i],linestyle="--") for i in range(len(comp_names)-1)]
+    ax[3].axvline(x=sma_cut,label=f"$sma_\\chi$={sma_cut:.1f}",lw=1,alpha=0.5)
+    ax[4].plot(isolist_comps[-1].sma,isolist_data.intens-isolist_comps[-1].intens,c='magenta',alpha=0.5,lw=1,label="residual")
 
     plot_1isophote(ax[0],sma=sma_cut,isolist=isolist_data)
     ax[3].set_yscale('log')
     ax[3].set_ylim(ymin=1)
+    ax[3].set_xlim(xmin=1)
     ax[3].set_title(f"1D profile, $\chi^2_c$={chi_1d:.2f},$\chi^2_f$={chi_square1d_full:.2f}")
     ax[3].set_ylabel("I")
     ax[4].set_ylabel("$\Delta$ I")
-    ax[4].set_xlabel("sma$^{0.25}$")
+    ax[4].set_xlabel("sma")
     ax[3].legend(fontsize=10,loc='center left', bbox_to_anchor=(1, 0.5))
 
     fig.tight_layout()
