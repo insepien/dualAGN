@@ -42,15 +42,15 @@ def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
     pdf.savefig();
 
 
-def fit_stat_1d(iso_data,iso_model,cut=0.8):
+def fit_stat_1d(iso_data,iso_model,nparams,cut=0.8):
     """calculate 1d chi squared, cut to 80% of data"""
     cut_index = int(np.round(len(iso_data.sma)*cut))
     sma_cut = iso_data.sma[cut_index]
     diff = iso_data.intens[1:cut_index]-iso_model.intens[1:cut_index]
-    chi_square1d = np.sum((diff/iso_data.rms[1:cut_index])**2)
+    chi_square1d_reduced = np.sum((diff/iso_data.rms[1:cut_index])**2)/(cut_index-nparams)
     diff_full = iso_data.intens[1:]-iso_model.intens[1:]
-    chi_square1d_full = np.sum((diff_full/iso_data.rms[1:])**2)
-    return chi_square1d,sma_cut,chi_square1d_full
+    chi_square1d_full_reduced = np.sum((diff_full/iso_data.rms[1:])**2)/(len(iso_data)-1-nparams)
+    return chi_square1d_reduced,sma_cut,chi_square1d_full_reduced
 
 
 def fit_stat_2d(image,model_im,sky_level,args):
@@ -69,8 +69,8 @@ def plot_1isophote(ax,sma,isolist):
     x, y, = iso.sampled_coordinates()
     ax.plot(x, y, color='white',linewidth="0.3")
 
-def plot_everything(pdf,image,m,modelname,isolist_data,isolist_comps,comp_names,fs,fsr,fslabel,args):
-    chi_1d,sma_cut,chi_square1d_full = fit_stat_1d(iso_data=isolist_data,iso_model=isolist_comps[-1])
+def plot_everything(pdf,image,m,modelname,isolist_data,isolist_comps,comp_names,fs,fsr,nParams,args):
+    chi_1d,sma_cut,chi_square1d_full = fit_stat_1d(iso_data=isolist_data,iso_model=isolist_comps[-1],nparams=nParams)
     fig = plt.figure(figsize=(14, 4))
     # Create grid and add subplots
     gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5])
@@ -151,7 +151,7 @@ if __name__=="__main__":
             model = d[model_names[i]]
             plot_everything(pdf,image=imageAGN,m=model.comp_im[-1],modelname= model.model_name,
                             isolist_data=isolist_agn,isolist_comps=model.iso_comp,
-                            comp_names=model.comp_name, fs=model.fit_result[fstat], fsr=model.fit_result.fitStatReduced, fslabel=fs_lab,args=args)
+                            comp_names=model.comp_name, fs=model.fit_result[fstat], fsr=model.fit_result.fitStatReduced, nParams=len(model.fit_result['params']),args=args)
             plot_model_components(pdf,comp_ims=model.comp_im,comp_names=model.comp_name, comp_pos=model.comp_pos,
                                   isolist_comps=model.iso_comp,args=args)
     print("Done: ", args.oname)
