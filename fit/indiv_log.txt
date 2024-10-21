@@ -1,4 +1,19 @@
-WARNING: No meaningful fit was possible. [photutils.isophote.ellipse]
+Fitting models:   0%|          | 0/10 [00:00<?, ?it/s]Fitting models:  10%|█         | 1/10 [00:00<00:07,  1.13it/s]Fitting models:  20%|██        | 2/10 [00:02<00:11,  1.38s/it]Fitting models:  40%|████      | 4/10 [00:03<00:04,  1.29it/s]Fitting models:  50%|█████     | 5/10 [00:04<00:03,  1.35it/s]Fitting models:  60%|██████    | 6/10 [00:09<00:08,  2.16s/it]Fitting models:  70%|███████   | 7/10 [00:09<00:04,  1.55s/it]Fitting models:  80%|████████  | 8/10 [00:10<00:02,  1.20s/it]Fitting models:  90%|█████████ | 9/10 [00:10<00:00,  1.04it/s]Fitting models: 100%|██████████| 10/10 [00:11<00:00,  1.02it/s]Fitting models: 100%|██████████| 10/10 [00:11<00:00,  1.15s/it]
+Done:  J0323+0018
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:325: RuntimeWarning: invalid value encountered in scalar divide
+  ea = abs(errors[2] / self.grad)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:326: RuntimeWarning: invalid value encountered in scalar divide
+  eb = abs(errors[1] * (1.0 - eps) / self.grad)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:329: RuntimeWarning: invalid value encountered in scalar divide
+  self.ellip_err = (abs(2.0 * errors[4] * (1.0 - eps) / self.sma
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:276: RuntimeWarning: invalid value encountered in scalar divide
+  a = up_coeffs[1] / self.sma / abs(sample.gradient)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:277: RuntimeWarning: invalid value encountered in scalar divide
+  b = up_coeffs[2] / self.sma / abs(sample.gradient)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:295: RuntimeWarning: invalid value encountered in scalar divide
+  a_err = abs(a) * np.sqrt((ce[1] / up_coeffs[1])**2 + gre**2)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:296: RuntimeWarning: invalid value encountered in scalar divide
+  b_err = abs(b) * np.sqrt((ce[2] / up_coeffs[2])**2 + gre**2)
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
@@ -21,14 +36,11 @@ ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
-Done: J1245+0535
-Traceback (most recent call last):
-  File "/home/insepien/dualAGN/fit/plot_fit_with1d.py", line 152, in <module>
-    plot_everything(pdf,image=imageAGN,m=model.comp_im[-1],modelname= model.model_name,
-  File "/home/insepien/dualAGN/fit/plot_fit_with1d.py", line 73, in plot_everything
-    chi_1d,sma_cut,chi_square1d_full = fit_stat_1d(iso_data=isolist_data,iso_model=isolist_comps[-1])
-                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/insepien/dualAGN/fit/plot_fit_with1d.py", line 48, in fit_stat_1d
-    sma_cut = iso_data.sma[cut_index]
-              ~~~~~~~~~~~~^^^^^^^^^^^
-IndexError: index 1 is out of bounds for axis 0 with size 1
+ModelObjectWrapper: about to call _model.CreateModelImage()...
+ModelObjectWrapper: about to call _model.CreateModelImage()...
+ModelObjectWrapper: about to call _model.CreateModelImage()...
+ModelObjectWrapper: about to call _model.CreateModelImage()...
+Done: J0323+0018
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:37: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
+  [fig.colorbar(im[i], ax=ax[i], shrink=0.7).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
+Done:  J0323+0018

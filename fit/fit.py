@@ -23,18 +23,6 @@ def find_highest_indices(arr):
     max_indices = np.unravel_index(np.argsort(flattened_arr)[-2:], arr.shape)
     return max_indices
 
-def crop_image(image, size=40):
-    """cropping agn cut out to and return new centers"""
-    ysO,xsO = find_highest_indices(image)
-    # find the center of AGNs
-    ycO = int(np.sum(ysO)/2)
-    xcO = int(np.sum(xsO)/2)
-    # crop
-    px=int(size/2)
-    imagecrop = image[ycO-px:ycO+px,xcO-px:xcO+px]
-    # find agn centers in cropped image
-    ys,xs = find_highest_indices(imagecrop)
-    return imagecrop, ys, xs
 
 def find_sky(image, objectName, args):
     fig,ax = plt.subplots(1,2,figsize=(10,4))
@@ -57,7 +45,7 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
                     midf, h1,h2,h_lim,alpha,alpha_lim):
     """Returns a function set dictionary with keys as model name, 
        values as model function set"""
-    sersic_dict0, sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
+    sersic1_dict, sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
                                                                     PA_lim, ell_lim, Iss_lim, rss_lim, Itot_lim,
                                                                     h1,h2,h_lim,alpha,alpha_lim)
     #========function dictionary
@@ -75,33 +63,30 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
     funcset_dict_sersic0 = {'X0': [Xss0,Xsslim[0],Xsslim[1]], 'Y0': [Yss0,Ysslim[0],Ysslim[1]], 
                    'function_list': [sersic_dict]}
     funcset_dict_sersic1 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
-                   'function_list': [sersic_dict]}
-    funcset_dict_sersicx2 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
-                   'function_list': [sersic_dict,sersic_dict0]}
+                   'function_list': [sersic1_dict]}
+    funcset_dict_serser0 = {'X0': [Xss0,Xsslim[0],Xsslim[1]], 'Y0': [Yss0,Ysslim[0],Ysslim[1]], 
+                   'function_list': [sersic_dict,sersic1_dict]}
+    funcset_dict_serser1 = {'X0': [Xss1,Xsslim[0],Xsslim[1]], 'Y0': [Yss1,Ysslim[0],Ysslim[1]], 
+                   'function_list': [sersic_dict,sersic1_dict]}
 
     # exponential
-    funcset_dict_serbar = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
-                    'function_list': [sersic_dict,flatbar_dict]}
-    funcset_dict_psfserexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
-                    'function_list': [psf_dict,sersic_dict,exp_dict]}
     funcset_dict_serexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
                     'function_list': [sersic_dict,exp_dict]}
     
     #========model dict
     funcset = {
         "sersic,sersic":[funcset_dict_sersic0,funcset_dict_sersic1],
-        "sersic+sersic":[funcset_dict_sersicx2],
+        "sersic+sersic":[funcset_dict_serser0],
         
-        #"psf,sersic+sersic":[funcset_dict_psf0,funcset_dict_sersicx2],
         "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
         "psf+sersic,sersic": [funcset_dict_sersic1,funcset_dict_psfser0],
         "2psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
+        "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
         
         "sersic": [funcset_dict_sersic0],
         "psf+sersic": [funcset_dict_psfser0],
         "psf,sersic": [funcset_dict_psf0,funcset_dict_sersic1],
         "psf,sersic+exp":[funcset_dict_psf0,funcset_dict_serexp],
-        #"sersic+bar":[funcset_dict_serbar]
         
     }
     return funcset
@@ -127,12 +112,12 @@ def get_dofit_val(objectName):
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+objectName+"*.mos.fits"))[0]
     expfile = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/*"+objectName+"*.exp.fits"))[0]
     with fits.open(mosfile) as hdul:
-        hdu = hdul[0]
-    sky_level = hdu.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
+        hdu0 = hdul[0]
+    sky_level = hdu0.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
+    gain = hdu0.header['GAIN'] #[e-/DU] in header
     with fits.open(expfile) as hdul:
         hdu = hdul[0]
     exptime= hdu.header['EXPOSURE'] # actual exp time
-    gain = hdu.header['EGAIN'] #[e-/DU] in header
     noise = hdu.header['EFFRN'] #[e-] in header
     numcom = hdu.header['NCOADD'] #Number of Averaged Frames   
     return exptime, noise, sky_level,numcom,gain
