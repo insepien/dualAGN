@@ -36,11 +36,11 @@ def plot_isophotes(ax,isolist,num_aper=10):
 def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
     """plot 2D model components and check residual with model image"""
     clmap = sns.color_palette(args.cmap, as_cmap=True)
+    comp_pos.append([comp_ims[-1].shape[0]/2,comp_ims[-1].shape[0]/2])
     ncom = len(comp_names)
     fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(14,3))
     im = [ax[i].imshow(comp_ims[i],norm='symlog',cmap=clmap) for i in range(ncom)]
-    [ax[i].text(0.05, 0.05, f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", transform=ax[i].transAxes, fontsize=8, color='k') for i in range(ncom-1)]
-    [ax[i].set_title(comp_names[i]) for i in range(ncom)]
+    [ax[i].set_title(f"{comp_names[i]}\n({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})") for i in range(ncom)]
     im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],norm='symlog',cmap=clmap))
     ax[-1].set_title("model-comps")
     [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
@@ -107,7 +107,7 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
         modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
-    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.15,1,1,1.5],hspace=0.05,wspace=0.05)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.05,wspace=0.05)
     ax1 = fig.add_subplot(gs[:, 0],xlabel='RA (deg)',ylabel='DEC (deg)') 
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
@@ -124,8 +124,9 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     # plot 2d and colorbars
     ax = [ax1,ax2,ax3,ax4a,ax4b]
     im = [ax[i].imshow([image, m, image-m][i], norm='symlog',cmap=cmapp) for i in range(3)]
-    [fig.colorbar(im[i],ax=ax[i],orientation='horizontal',location='bottom',pad=0.05) for i in range(1,3)]
-    [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,$\chi^2_r$={fsr:.2f}'][i]) for i in range(3)]
+    fig.colorbar(im[2],ax=ax[2],orientation='horizontal',location='bottom',pad=0.05)
+    fig.colorbar(im[0],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
+    [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,$\chi^2_r$={fsr:.3f}'][i]) for i in range(3)]
     # radial plot data
     ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c='cornflowerblue')
     ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color='cornflowerblue',alpha=0.5)
@@ -137,6 +138,7 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     [ax[3].fill_between(sma_arcsec[1:].value,mu_models[i][1][1:],mu_models[i][2][1:],color=colors[i],alpha=0.5) for i in range(len(comp_names)-1)]
     ax[4].plot(sma_kpc[1:],mu_data[0][1:]-mu_models[-1][0][1:],c=colors[-2],linestyle="dashdot")
     ax[4].fill_between(sma_kpc[1:].value,mu_data[1][1:]-mu_models[-1][1][1:],mu_data[2][1:]-mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
+    ax[4].axhline(y=0,linestyle='--',c='cornflowerblue',lw=1)
     # format ticks
     ax[3].invert_yaxis()
     ax[3].set_xlabel("R[arcsec]")
@@ -147,6 +149,7 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     
     ax[4].set_xlabel("R[kpc]")
     ax[4].set_ylabel("$\Delta \mu$") 
+    ax[4].set_ylim((-0.5,0.5))
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
     pdf.savefig(bbox_inches='tight', pad_inches=0.2);
@@ -192,7 +195,7 @@ if __name__=="__main__":
         fs_lab = "AIC"
         fstat='aic'
     else:
-        sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
+        sorted_ind = np.argsort([d[m].fit_result.fitStatReduced for m in model_names])
         fs_lab = "$\chi^2$"
         fstat = 'fitStat'
     
