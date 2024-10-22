@@ -36,11 +36,11 @@ def plot_isophotes(ax,isolist,num_aper=10):
 def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
     """plot 2D model components and check residual with model image"""
     clmap = sns.color_palette(args.cmap, as_cmap=True)
-    comp_pos.append([comp_ims[-1].shape[0]/2,comp_ims[-1].shape[0]/2])
     ncom = len(comp_names)
-    fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(14,3))
+    fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(ncom*4,3))
     im = [ax[i].imshow(comp_ims[i],norm='symlog',cmap=clmap) for i in range(ncom)]
-    [ax[i].set_title(f"{comp_names[i]}\n({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})") for i in range(ncom)]
+    [ax[i].text(0.05, 0.05, f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", transform=ax[i].transAxes, fontsize=8, color='k') for i in range(ncom-1)]
+    [ax[i].set_title(comp_names[i]) for i in range(ncom)]
     im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],norm='symlog',cmap=clmap))
     ax[-1].set_title("model-comps")
     [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
@@ -103,8 +103,8 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
 def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords,colormap):
     colors = sns.color_palette(colormap, len(comp_names)+1)[1:]
     cmapp = sns.color_palette(colormap, as_cmap=True).reversed()
-    if len(modelname) > 16:
-        modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
+    if len(modelname) > 16 and '\n' not in modelname:
+        modelname = modelname.split(",")[0]+','+modelname.split(",")[1]
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
     gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.05,wspace=0.05)
