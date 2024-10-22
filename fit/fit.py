@@ -114,9 +114,9 @@ def get_dofit_val(objectName):
     with fits.open(mosfile) as hdul:
         hdu0 = hdul[0]
     sky_level = hdu0.header['BACKGND'] #[e-/s] native pixels, value should be in the same units as the data pixels
-    gain = hdu0.header['GAIN'] #[e-/DU] in header
     with fits.open(expfile) as hdul:
         hdu = hdul[0]
+    gain = hdu.header['EGAIN'] #[e-/DU] in header
     exptime= hdu.header['EXPOSURE'] # actual exp time
     noise = hdu.header['EFFRN'] #[e-] in header
     numcom = hdu.header['NCOADD'] #Number of Averaged Frames   

@@ -1,5 +1,3 @@
-Fitting models:   0%|          | 0/10 [00:00<?, ?it/s]Fitting models:  10%|█         | 1/10 [00:01<00:15,  1.67s/it]Fitting models:  20%|██        | 2/10 [00:03<00:13,  1.65s/it]Fitting models:  30%|███       | 3/10 [00:04<00:09,  1.40s/it]Fitting models:  40%|████      | 4/10 [00:07<00:12,  2.09s/it]Fitting models:  50%|█████     | 5/10 [00:08<00:07,  1.56s/it]Fitting models:  60%|██████    | 6/10 [00:12<00:09,  2.46s/it]Fitting models:  70%|███████   | 7/10 [00:13<00:06,  2.05s/it]Fitting models:  90%|█████████ | 9/10 [00:14<00:01,  1.31s/it]Fitting models: 100%|██████████| 10/10 [00:16<00:00,  1.55s/it]Fitting models: 100%|██████████| 10/10 [00:16<00:00,  1.69s/it]
-Done:  J0400-0652
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:325: RuntimeWarning: invalid value encountered in scalar divide
   ea = abs(errors[2] / self.grad)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:326: RuntimeWarning: invalid value encountered in scalar divide
@@ -14,12 +12,6 @@ Done:  J0400-0652
   a_err = abs(a) * np.sqrt((ce[1] / up_coeffs[1])**2 + gre**2)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:296: RuntimeWarning: invalid value encountered in scalar divide
   b_err = abs(b) * np.sqrt((ce[2] / up_coeffs[2])**2 + gre**2)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:332: RuntimeWarning: invalid value encountered in scalar divide
-  self.pa_err = (abs(2.0 * errors[3] * (1.0 - eps) / self.sma
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:276: RuntimeWarning: divide by zero encountered in scalar divide
-  a = up_coeffs[1] / self.sma / abs(sample.gradient)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:277: RuntimeWarning: divide by zero encountered in scalar divide
-  b = up_coeffs[2] / self.sma / abs(sample.gradient)
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
@@ -46,15 +38,13 @@ ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
-Done: J0400-0652
+Done: J0752+2019
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in divide
-  return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:46: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
   [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in divide
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
-Done:  J0400-0652
+Done:  J0752+2019
