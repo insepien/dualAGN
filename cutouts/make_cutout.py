@@ -30,7 +30,7 @@ if __name__ == "__main__":
         script to make cutout
         """), formatter_class=RawDescriptionHelpFormatter)
     #parser.add_argument("--inDir", default="~/raw-data-agn/mos-fits-agn", type=str, help="output directory")
-    parser.add_argument("--outDir", default="~/agn-result/box", type=str, help="output directory")
+    parser.add_argument("--outDir", default="~/agn-result/box/final_cut", type=str, help="output directory")
     parser.add_argument("--cutSize", type=int, help="fits cutout size")
     parser.add_argument("--objectName", type=str, help="object name")
     parser.add_argument("--makeMulti", action= 'store_true')
