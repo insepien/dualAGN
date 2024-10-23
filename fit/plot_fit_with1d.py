@@ -101,7 +101,7 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     
 
 def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords,colormap):
-    colors = sns.color_palette(colormap, len(comp_names)+1)[1:]
+    colors = sns.color_palette(colormap, len(comp_names)+2)[1:]
     cmapp = sns.color_palette(colormap, as_cmap=True).reversed()
     if len(modelname) > 16 and '\n' not in modelname:
         modelname = modelname.split(",")[0]+','+modelname.split(",")[1]
@@ -129,17 +129,17 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     fig.colorbar(im[1],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
     [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,$\chi^2_r$={fsr:.3f}'][i]) for i in range(3)]
     # radial plot data
-    ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c='cornflowerblue')
-    ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color='cornflowerblue',alpha=0.5)
+    ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c=colors[-1])
+    ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color=colors[-1],alpha=0.5)
     # radial plot model
-    ax[3].plot(sma_arcsec[1:],mu_models[-1][0][1:],label="model",c=colors[-1],linestyle="dashdot")
-    ax[3].fill_between(sma_arcsec[1:].value, mu_models[-1][1][1:],mu_models[-1][2][1:],color=colors[-1],alpha=0.5)
+    ax[3].plot(sma_arcsec[1:],mu_models[-1][0][1:],label="model",c=colors[-2],linestyle="dashdot")
+    ax[3].fill_between(sma_arcsec[1:].value, mu_models[-1][1][1:],mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
     # radial plot components
     [ax[3].plot(sma_arcsec[1:],mu_models[i][0][1:],label=comp_names[i],linestyle="dashdot",c=colors[i]) for i in range(len(comp_names)-1)]
     [ax[3].fill_between(sma_arcsec[1:].value,mu_models[i][1][1:],mu_models[i][2][1:],color=colors[i],alpha=0.5) for i in range(len(comp_names)-1)]
     ax[4].plot(sma_kpc[1:],mu_data[0][1:]-mu_models[-1][0][1:],c=colors[-2],linestyle="dashdot")
     ax[4].fill_between(sma_kpc[1:].value,mu_data[1][1:]-mu_models[-1][1][1:],mu_data[2][1:]-mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
-    ax[4].axhline(y=0,linestyle='--',c='cornflowerblue',lw=1)
+    ax[4].axhline(y=0,linestyle='--',c=colors[1],lw=1)
     # format ticks
     ax[3].invert_yaxis()
     ax[3].set_xlabel("R[arcsec]")
