@@ -1,10 +1,13 @@
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
-Done: J0328-0710
+ModelObjectWrapper: about to call _model.CreateModelImage()...
+Done: J0813+0905
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in divide
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:156: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:46: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
   [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
-Done:  J0328-0710
+Done:  J0813+0905
