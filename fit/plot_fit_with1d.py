@@ -123,9 +123,10 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     ax1.tick_params(direction='in')
     # plot 2d and colorbars
     ax = [ax1,ax2,ax3,ax4a,ax4b]
-    im = [ax[i].imshow([image, m, image-m][i], norm='symlog',cmap=cmapp) for i in range(3)]
-    fig.colorbar(im[2],ax=ax[2],orientation='horizontal',location='bottom',pad=0.05)
-    fig.colorbar(im[0],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
+    im = [ax[i].imshow([image, m][i], norm='symlog',cmap=cmapp) for i in range(2)]
+    im2 = ax[2].imshow(image-m,cmap=cmapp)
+    fig.colorbar(im2,ax=ax[2],orientation='horizontal',location='bottom',pad=0.05)
+    fig.colorbar(im[1],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
     [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,$\chi^2_r$={fsr:.3f}'][i]) for i in range(3)]
     # radial plot data
     ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c='cornflowerblue')
