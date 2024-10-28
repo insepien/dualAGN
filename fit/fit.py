@@ -8,6 +8,8 @@ from tqdm import tqdm
 import logging
 import glob
 from modelComponents import makeModelDict
+from photutils.aperture import EllipticalAperture
+from photutils.detection import find_peaks
 
 medium_font_size = 14 
 plt.rcParams['font.size'] = medium_font_size
@@ -15,6 +17,41 @@ plt.rcParams['axes.labelsize'] = medium_font_size
 plt.rcParams['axes.titlesize'] = medium_font_size
 plt.rcParams['xtick.labelsize'] = medium_font_size
 plt.rcParams['ytick.labelsize'] = medium_font_size
+
+def make_peak_tbl(image,intens,agn_mask_size=35):
+    """mask out agn and find peaks"""
+    s = image.shape[0]
+    midf = int(s//2)
+    # mask out central agn
+    peak_mask = np.zeros((s,s))
+    peak_mask[midf-agn_mask_size:midf+agn_mask_size,midf-agn_mask_size:midf+agn_mask_size] = 1
+    # convert to boolean
+    peak_mask = peak_mask==1
+    # detect peaks
+    peak_tbl = find_peaks(image,threshold=intens,mask=peak_mask)
+    return peak_tbl
+
+
+def make_mask(image,pos,aper_radius,pa=180):
+    """make a mask provided position and aperture radius"""
+    aper0 = EllipticalAperture(pos,aper_radius,aper_radius,pa)
+    aper_mask0 = aper0.to_mask()
+    mask0 = aper_mask0.to_image(image.shape)
+    return mask0
+
+
+def mask_image(image,rad,intens,agn_mask_size,PA=180):
+    """create mask and masked images"""
+    peak_tbl = make_peak_tbl(image,intens,agn_mask_size)
+    mask=[]
+    # make masks
+    for i in range(len(peak_tbl)):
+        mask.append(make_mask(image,pos = [peak_tbl[i]['x_peak'],peak_tbl[i]['y_peak']],aper_radius=rad,pa=PA))
+    # sum all masks
+    mask = np.sum(mask,axis=0)
+    # make masked image
+    masked_im = np.where(mask==0,image,0)
+    return masked_im
 
 
 def find_highest_indices(arr):
@@ -189,6 +226,10 @@ if __name__=="__main__":
     parser.add_argument("--inFile", type=str, help="cutout file")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_fit", help="output directory")
     parser.add_argument("--plotSkyHist", action="store_true")
+    parser.add_argument("--mask", action="store_true")
+    parser.add_argument("--mask_rad", type=float, default=10)
+    parser.add_argument("--mask_intens", type=float, default=10)
+    parser.add_argument("--agn_mask_size", type=float, default=35)
     args = parser.parse_args()
     
     # load cut out and psf file
@@ -197,6 +238,10 @@ if __name__=="__main__":
     else:
         cutoutPath = glob.glob(os.path.expanduser("~/agn-result/box/final_cut/"+args.oname+"*"))[0]
     imageAGN = fits.getdata(os.path.expanduser(cutoutPath))
+    #masking
+    if args.mask:
+        imageAGN = mask_image(imageAGN,rad=args.mask_rad,intens=args.mask_intens,agn_mask_size=args.agn_mask_size)
+
     psf_fileName = "psf_"+args.oname+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
     with open (os.path.expanduser(psfPath), "rb") as f:
