@@ -18,41 +18,6 @@ plt.rcParams['axes.titlesize'] = medium_font_size
 plt.rcParams['xtick.labelsize'] = medium_font_size
 plt.rcParams['ytick.labelsize'] = medium_font_size
 
-def make_peak_tbl(image,intens,agn_mask_size=35):
-    """mask out agn and find peaks"""
-    s = image.shape[0]
-    midf = int(s//2)
-    # mask out central agn
-    peak_mask = np.zeros((s,s))
-    peak_mask[midf-agn_mask_size:midf+agn_mask_size,midf-agn_mask_size:midf+agn_mask_size] = 1
-    # convert to boolean
-    peak_mask = peak_mask==1
-    # detect peaks
-    peak_tbl = find_peaks(image,threshold=intens,mask=peak_mask)
-    return peak_tbl
-
-
-def make_mask(image,pos,aper_radius,pa=180):
-    """make a mask provided position and aperture radius"""
-    aper0 = EllipticalAperture(pos,aper_radius,aper_radius,pa)
-    aper_mask0 = aper0.to_mask()
-    mask0 = aper_mask0.to_image(image.shape)
-    return mask0
-
-
-def mask_image(image,rad,intens,agn_mask_size,PA=180):
-    """create mask and masked images"""
-    peak_tbl = make_peak_tbl(image,intens,agn_mask_size)
-    mask=[]
-    # make masks
-    for i in range(len(peak_tbl)):
-        mask.append(make_mask(image,pos = [peak_tbl[i]['x_peak'],peak_tbl[i]['y_peak']],aper_radius=rad,pa=PA))
-    # sum all masks
-    mask = np.sum(mask,axis=0)
-    # make masked image
-    masked_im = np.where(mask==0,image,0)
-    return masked_im
-
 
 def find_highest_indices(arr):
     """returns a tuple of ys, xs - indices of pixels with highest counts"""
@@ -220,53 +185,48 @@ if __name__=="__main__":
         """
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--inDir", type=str, default="~/agn-result/box/final_cut", help="path to cut out directory")
+    parser.add_argument("--inDir", type=str, default="~/research-data/agn-result/fit/final_fit_nb/", help="path to cut out directory")
     parser.add_argument("--psfPath", type=str, default="~/agn-result/psf_pkls", help="path to psf directory")
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--inFile", type=str, help="cutout file")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_fit", help="output directory")
     parser.add_argument("--plotSkyHist", action="store_true")
-    parser.add_argument("--mask", action="store_true")
-    parser.add_argument("--mask_rad", type=float, default=10)
-    parser.add_argument("--mask_intens", type=float, default=10)
-    parser.add_argument("--agn_mask_size", type=float, default=35)
+    parser.add_argument("--original", action="store_true", defaul='use this flag if fitting original, not sky subtracted image')
+    parser.add_argument("--PA", type=float, default=200., help='guess position angle')
     args = parser.parse_args()
     
-    # load cut out and psf file
+    # load cutout file
     if args.inFile:
-        cutoutPath = os.path.expanduser("~/agn-result/box/final_cut/"+args.inFile)
+        cutoutPath = os.path.expanduser(args.inDir+args.inFile)
     else:
-        cutoutPath = glob.glob(os.path.expanduser("~/agn-result/box/final_cut/"+args.oname+"*"))[0]
+        cutoutPath = glob.glob(os.path.expanduser(args.inDir+args.oname+"*"))[0]
     imageAGN = fits.getdata(os.path.expanduser(cutoutPath))
-    #masking
-    if args.mask:
-        imageAGN = mask_image(imageAGN,rad=args.mask_rad,intens=args.mask_intens,agn_mask_size=args.agn_mask_size)
-
+    # load psf file
     psf_fileName = "psf_"+args.oname+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
     with open (os.path.expanduser(psfPath), "rb") as f:
         d = pickle.load(f)
     epsf = d['psf'].data
-    
     # get do fit params
     exptime, noise, sky_level,numcom,gain = get_dofit_val(args.oname)
-
-    # cropping image and find centers for initial guess
+    # find centers for initial guess
     ys,xs = find_highest_indices(imageAGN)
     Imax = imageAGN.max()
     framelim = imageAGN.shape[0]
     midF=framelim//2
-    # find background level and subtract
-    sky = find_sky(imageAGN, args.oname, args)
-    imageAGN_bs = imageAGN-sky
- 
+    # find background level and subtract if using original image
+    if args.original:
+        sky = find_sky(imageAGN, args.oname, args)
+        imageAGN_bs = imageAGN-sky
+    else:
+        imageAGN_bs = imageAGN
     # make models
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
                          X1=xs[1], Y1=ys[1], 
                          Xss0=xs[0], Yss0=ys[0], 
                          Xss1=xs[1], Yss1=ys[1],
                          Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
-                         PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
+                         PA_ss=args.PA, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
                          PA_lim=[0,360], ell_lim=[0.0,1.0],
                          Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
                          midf=midF, 
