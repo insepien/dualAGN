@@ -6,13 +6,17 @@ log_file="plot_fit_log.txt"
 # Clear the log file before running the script
 > "$log_file"
 
-files=$(ls ~/agn-result/fit/final_fit | sort)
+mapfile -t files < <(ls ~/research-data/agn-result/box/200 | sort)
+files=("${files[@]:10}")
+PAs=(10 160 10 10 130 70 130 30 30)
+length=${#PAs[@]}
 
 #for f in $(echo "$files" | head -n 5); do
-for f in $(echo "$files" | sed -n '31,43p'); do
+for ((i=0; i<length; i++)); do
+    f=${files[i]}
     base_name=$(basename "$f" .fits)
     objectName=${base_name:0:10}
-    python3 makePlotComps.py --oname "$objectName" --sma 20 >> "$log_file" 2>&1
-    python3 plot_fit_with1d.py --oname "$objectName" >> "$log_file" 2>&1
+    python3 makePlotComps.py --oname "$objectName" --sma 15 --inDir "~/research-data/agn-result/fit/test_fit_masked/masked_fit" --outDir "~/research-data/agn-result/fit/test_fit_masked/masked_fit_comp" >> "$log_file" 2>&1
+    python3 plot_fit_with1d.py --oname "$objectName" --inDir "~/research-data/agn-result/fit/test_fit_masked/masked_fit_comp" --outDir "~/research-data/agn-result/fit/test_fit_masked" >> "$log_file" 2>&1
     echo "Done: $objectName"
 done
