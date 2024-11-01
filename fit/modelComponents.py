@@ -14,9 +14,13 @@ def makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
     'I_e': [I_ss, Iss_lim[0],Iss_lim[1]], 'r_e': [r_ss, rss_lim[0],rss_lim[1]]}
     sersic_dict = {'name': "Sersic", 'label': "bulge", 'parameters': sersic}
 
-    sersic1 = {'PA': [PA_ss/4, PA_lim[0],PA_lim[1]], 'ell_bulge': [ell_ss, ell_lim[0],ell_lim[1]], 'n': [n_ss, 0, 10],
+    sersic1 = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell_bulge': [ell_ss, ell_lim[0],ell_lim[1]], 'n': [n_ss, 0, 10],
     'I_e': [I_ss*4, Iss_lim[0],Iss_lim[1]], 'r_e': [r_ss/4, rss_lim[0],rss_lim[1]]}
     sersic1_dict = {'name': "Sersic", 'label': "bulge 1", 'parameters': sersic1}
+
+    sersic2 = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell_bulge': [ell_ss, ell_lim[0],ell_lim[1]], 'n': [n_ss, 0, 10],
+    'I_e': [I_ss*4, Iss_lim[0],Iss_lim[1]], 'r_e': [r_ss/4, rss_lim[0],rss_lim[1]]}
+    sersic2_dict = {'name': "Sersic", 'label': "bulge 2", 'parameters': sersic2}
     # PSF
     psf = {'I_tot' : [Itot, Itot_lim[0], Itot_lim[1]]}
     psf_dict = {'name': "PointSource", 'label': "psf", 'parameters': psf}
@@ -32,7 +36,7 @@ def makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
     exponential = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell': [ell_ss, ell_lim[0],ell_lim[1]], 
                    'I_0': [I_ss, Iss_lim[0],Iss_lim[1]], 'h': [h1, h_lim[0],h_lim[1]]}
     exp_dict = {'name': "Exponential", 'label': "disk", 'parameters':exponential}
-    return sersic1_dict, sersic_dict, psf_dict, flatbar_dict, exp_dict
+    return sersic2_dict, sersic1_dict, sersic_dict, psf_dict, flatbar_dict, exp_dict
 
 
 class modelComps:

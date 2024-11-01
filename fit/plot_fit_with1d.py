@@ -103,8 +103,9 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
 def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords,colormap):
     colors = sns.color_palette(colormap, len(comp_names)+2)[1:]
     cmapp = sns.color_palette(colormap, as_cmap=True).reversed()
-    if len(modelname) > 16 and '\n' not in modelname:
-        modelname = modelname.split(",")[0]+','+modelname.split(",")[1]
+    if len(modelname) > 16 and ',' in modelname:
+        modelname.replace('\n','')
+        modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
     gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.05,wspace=0.05)
@@ -178,7 +179,7 @@ if __name__=="__main__":
     imageAGN = d['agn']
     isolist_agn= d['agn-iso']
     # load stuffs for coordinate calculations
-    imageAGNFile = glob.glob(os.path.expanduser("~/agn-result/box/final_cut/"+args.oname+"*"))[0]
+    imageAGNFile = glob.glob(os.path.expanduser("~/research-data/agn-result/box/final_cut/"+args.oname+"*"))[0]
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     with fits.open(mosfile) as hdul:
         hdu0 = hdul[0]
