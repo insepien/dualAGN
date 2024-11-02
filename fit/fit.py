@@ -88,6 +88,7 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
         "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
         "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
         "psf+sersic,psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
+        "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
         "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
         
         "sersic": [funcset_dict_sersic0],
