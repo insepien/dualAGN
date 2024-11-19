@@ -207,9 +207,12 @@ if __name__=="__main__":
         cutoutPath = os.path.expanduser(args.inDir+args.inFile)
     else:
         cutoutPath = os.path.expanduser(args.inDir+args.oname+".pkl")
-    with open(cutoutPath, 'rb') as f:
-        d = pickle.load(f)
-    imageAGN = d['imageSS']
+    if args.inFile[-4:] =="fits":
+        imageAGN = fits.getdata(cutoutPath)
+    else:
+        with open(cutoutPath, 'rb') as f:
+            d = pickle.load(f)
+        imageAGN = d['imageSS']
     # load psf file
     psf_fileName = "psf_"+args.oname+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
