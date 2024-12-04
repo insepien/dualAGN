@@ -8,17 +8,10 @@ from astropy.wcs import WCS
 from astropy.coordinates import angular_separation
 import astropy.units as u
 from astropy.cosmology import WMAP9 as cosmo
+plt.rcParams['mathtext.fontset'] = 'cm'
+plt.rcParams['font.family'] = 'monospace'
 
-def check(df):
-    """some checks of df"""
-    print("Chi best < chi compare: ", np.sum([df.loc[n,"chi_r"][0] < df.loc[n,"chi_r"][1] for n in range(len(df))]))
-    [print(n, df.loc[n,"Obj Name"], df.loc [n, "chi_r"]) for n in np.random.randint(0,len(df),3) ];
-
-def save_pkl(args,df,filename):
-    savepath = os.path.expanduser(args.outDir+filename)
-    df.to_pickle(savepath)
-
-
+### CHI-SQUARED TABLE
 def make_chi_table(df):
     df1 = df.loc[:,["Obj Name", "Type", "chi_r"]].copy()
     # fill in chi for 1 and 2 cores
@@ -30,12 +23,9 @@ def make_chi_table(df):
     df1['del chi'] = np.abs(df1['chi 1 core'] - df1['chi 2 core'])
     return df1
 
-def save_csv(args,df,filename):  
-    savepath = os.path.expanduser(args.outDir+filename)
-    df.to_csv(savepath, sep='\t', index=False)
-
 
 def plot_chi(args,df1):
+    """plot distribution of chi-square"""
     fig,ax = plt.subplots(1,3,sharey=True,figsize=(10,3))
     ax[0].hist([df1.loc[n,'chi_r'][0] for n in range(len(df))])
     ax[0].set_xlabel("$\chi_r$")
@@ -53,7 +43,7 @@ def plot_chi(args,df1):
     savepath = os.path.expanduser(args.outDir+"chi.pdf")
     fig.savefig(savepath)
 
-
+### SEPARATION
 def ang_sep(pos1,pos2,on,z=0.2):
     """calculate angular separation given dictionary of parameter names and values
         returns angular sep in arcsec and physical separation in kpc"""
@@ -101,7 +91,6 @@ def indiv_sep_cal(df2,separation):
     separation.append(df2.loc[ind,'separation'][1])
     
 
-
 def plot_sep(args,separations):
     plt.hist([a[1].value for a in separations if a!=''],bins=np.arange(11)*100)
     plt.title("distribution of core separation")
@@ -110,81 +99,109 @@ def plot_sep(args,separations):
     savepath = os.path.expanduser(args.outDir+"sep.pdf")
     plt.savefig(savepath)
 
+
+### OIII BOLO LUM
+def oiii_bol_lum(df,alpaka):
+    df['sersic index'] = None
+    df['I1'] = None
+    df['I2'] = None
+    # add sersic index, intensity, luminosity
+    for j in range(len(df)):
+        # save alpaka oii lum
+        oiii_lum = alpaka[alpaka['Names'] == df.loc[j,"Obj Name"]]['OIII_5007_LUM_DERRED'].values[0]
+        df.at[j,"OIII_5007_LUM_DERRED"] = oiii_lum
+        if df.loc[j,"comp fit"] == "":
+            param_names = list(df.loc[j,'param_vals_best'].keys())
+
+            ## GET SERSIC INDEX
+            ns = [i for i in param_names if i[0]=="n"]
+            sersic_index = [df.loc[j,'param_vals_best'][n] for n in ns]
+
+            ## GET INTENSITY RATIO
+            ind2 = param_names.index("X0_2")
+            core1_intens = [df.loc[j,'param_vals_best'][i] for i in param_names[:ind2] if i[0]=="I"]
+            core2_intens = [df.loc[j,'param_vals_best'][i] for i in param_names[ind2:] if i[0]=="I"]
+            df.at[j,"sersic index"] = sersic_index
+            df.at[j, "I1"] = core1_intens
+            df.at[j, "I2"] = core2_intens
+            df.at[j,'I1/I2'] = np.sum(df.loc[j,'I1'])/np.sum(df.loc[j,'I2'])
+
+            ## CALCULATE OIII BOLOMETRIC LUMINOSITY 
+            # Kauffman bolo correction
+            oiii_bol = oiii_lum*800
+            
+            # save oiii bolo lums
+            df.at[j,"OIII_BOL_2"] = oiii_bol/(df.loc[j,'I1/I2']+1)
+            df.at[j,"OIII_BOL_1"] = oiii_bol - df.at[j,"OIII_BOL_2"]
+    ## COMP FIT AGNS
+    for j in[8,14]:
+        # get sersic index
+        ser_ind = [df.loc[j,'param_vals_best'][i] for i in list(df.loc[j,'param_vals_best'].keys()) if i[0]=="n"]
+        ser_ind.append([df.loc[j,'param_vals_best']['core 2'][i] for i in list(df.loc[j,'param_vals_best']['core 2'].keys()) if i[0]=="n"])
+        # get intensity
+        i1 = [df.loc[j,'param_vals_best'][i] for i in list(df.loc[j,'param_vals_best'].keys()) if i[0]=="I"]
+        i2 = [df.loc[j,'param_vals_best']['core 2'][i] for i in df.loc[j,'param_vals_best']['core 2'].keys() if i[0]=="I"]
+        df.at[j,"sersic index"] = ser_ind
+        df.at[j,"I1"] = i1
+        df.at[j,"I2"] = i2
+    # 2 core intensity and luminosity
+    df.at[8,"I1/I2"] = np.sum(i1)/np.sum(i2)
+    df.at[8,"OIII_BOL_2"] = df.loc[8,"OIII_5007_LUM_DERRED"]*800/(df.loc[8,'I1/I2']+1)
+    df.at[8,"OIII_BOL_1"] = df.loc[8,"OIII_5007_LUM_DERRED"]*800 - df.at[8,"OIII_BOL_2"]
+    # 3 core agn intensity and luminosity
+    df.at[14,"I2"] = df.loc[14,"I2"][:-1]
+    df.at[14,"I3"] = df.loc[14,"I2"][-1]
+    i1_i2 = np.sum(df.loc[14,"I1"])/np.sum(df.loc[14,"I2"])
+    i3_i2 = np.sum(df.loc[14,"I3"])/np.sum(df.loc[14,"I2"])
+    df.at[14,"OIII_BOL_2"] = df.loc[14,"OIII_5007_LUM_DERRED"]*800/(1+i1_i2+i3_i2)
+    df.at[14,"OIII_BOL_1"] = df.loc[14,"OIII_BOL_2"]*i1_i2
+    df.at[14,"OIII_BOL_3"] = df.loc[14,"OIII_BOL_2"]*i3_i2
+    return df
+
+
+def plot_Lbol(df,args):
+    Lbol_2core = list(np.concatenate([df['OIII_BOL_1'],df['OIII_BOL_2']]))
+    fig,ax = plt.subplots(1,2,figsize=(10,4))
+    ax[0].hist(np.log10(Lbol_2core), bins=np.linspace(45,49,11),edgecolor="black",color="darkseagreen")
+    ax[0].set_xlabel("Log L$_{\mathrm{OIII \ Bol}}$ (ergs s$^{-1}$)")
+    ax[0].set_ylabel("Number of AGN")
+    ax[0].set_title("L$_{\mathrm{OIII \ Bol}}$ distribution of 2-core \n(for each AGN, include core+bulge)")
+
+    ax[1].hist([x if x>1 else 1/x for x in df['I1/I2'] ],edgecolor="black",color="darkseagreen")
+    ax[1].set_title("distribution of I1/I2 ")
+    ax[1].set_xlabel("I1/I2")
+    ax[1].set_ylabel("Number of AGN")
+    fig.tight_layout()
+    fig.savefig(args.outDir+"oiiiBol.pdf")
+
+
+
+### SAVE FUNCTIONS
+def save_pkl(args,df,filename):
+    savepath = os.path.expanduser(args.outDir+filename)
+    df.to_pickle(savepath)
+
+def save_csv(args,df,filename):  
+    savepath = os.path.expanduser(args.outDir+filename)
+    df.to_csv(savepath, sep='\t', index=False)
+
+
 if __name__ == "__main__":
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
     parser = ArgumentParser(description=("analysis of fit result script"),
                             formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument("--inDir", type=str, default="/home/insepien/research-data/", help="input directory")
+    parser.add_argument("--inFile", type=str, default="all_result.pkl", help="input file")
     parser.add_argument("--outDir", type=str, default="/home/insepien/research-data/", help="output directory")
-    parser.add_argument("--save_main", action="store_true", help='use this flag to save all_result df')
-    parser.add_argument("--save_chi", action="store_true", help='use this flag to save chi table')
-    parser.add_argument("--save_sep", action="store_true", help='use this flag to save sep histogram')
+    parser.add_argument("--save_chi", action="store_true", help='use this flag to save chi csv table')
+    parser.add_argument("--save_sep", action="store_true", help='use this flag to save separation table+histogram')
+    parser.add_argument("--save_bolo", action="store_true", help='use this flag to save bolometric luminosity')
     args = parser.parse_args()
 
-    # read text file of model selection
-    with open(os.path.expanduser(args.outDir+"blank.txt"),"r") as f:
-        d = f.read().splitlines()
-    # turn into df
-    df = pd.DataFrame([d[1:][i].split('\t') for i in range(len(d[1:]))],columns=d[0].split('\t'))
-    df['chi'] = None
-    df['chi_r'] = None
-    df['param_vals_best'] = None
-    df['param_vals_compare'] = None
-
-    # fill in df by row
-    for n in range(len(df)):
-        oname = df.loc[n]['Obj Name']
-        # if being 1 of 2 extra weird object, use different file path
-        if df.loc[n, 'comp fit'] != "" and df.loc[n, 'Use massfit'] =="1":
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            compare_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+"_all.pkl")
-            fix = False
-        # if normal object, best model from mass fit
-        elif df.loc[n, 'comp fit'] == "" and df.loc[n, 'Use massfit'] =="1":
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            compare_path = best_path
-            fix = False
-        # for best model from nb
-        else:
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/final_fit_nb/"+oname+".pkl")
-            compare_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            fix = True
-
-        # open fit result files
-        with open(best_path,"rb") as f:
-            d_best = pickle.load(f)
-        with open(compare_path,"rb") as f:
-            d_compare = pickle.load(f)
-
-        # if using nb, fix format error in final_fit_nb pkl
-        if fix:
-            d_best['paramNames'] = [d_best['paramNames']]
-
-        # find index of best model
-        if len(d_best['modelNames'])==1 and list(d_best['modelNames'].keys())[0].replace('\n',"") .replace('/n',"")== df.loc[n, "best model"]:
-            ind_best = 0
-        else: 
-            ind_best = list(d_best['modelNames'].keys()).index(df.loc[n]['best model'])
-    
-        # find index of compare model
-        ind_compare = list(d_compare['modelNames'].keys()).index(df.loc[n]['compare model'])
-
-        # add chi and chi_r values
-        df.at[n,'chi'] = [d['fitResults'][i].fitStat for d,i in zip([d_best,d_compare],[ind_best,ind_compare])]
-        df.at[n,'chi_r'] = [d['fitResults'][i].fitStatReduced for d,i in zip([d_best,d_compare],[ind_best,ind_compare])]
-        
-        # add dictionary of param names-param values
-        df.at[n,'param_vals_best'] = dict(zip(d_best['paramNames'][ind_best],d_best['fitResults'][ind_best].params))
-        df.at[n,'param_vals_compare'] = dict(zip(d_compare['paramNames'][ind_compare],d_compare['fitResults'][ind_compare].params))
-    
-    #check main df and save
-    check(df)
-    if args.save_main:
-        save_pkl(args,df,"all_results.pkl")
-        print("Done saving main df")
-
+    df = pd.read_pickle(args.inDir+args.inFile)
     # make chi table
-    df1 = make_chi_table(df)
     if args.save_chi:
+        df1 = make_chi_table(df)
         plot_chi(args,df1)
         df1.drop('chi_r',axis=1,inplace=True)
         save_csv(args,df1,"chi.csv")
@@ -210,4 +227,11 @@ if __name__ == "__main__":
         print("Done saving sep table")
 
 
-        
+    # calculate OIII bolometric luminosity
+    if args.save_bolo:
+        df = pd.read_pickle(os.path.expanduser(args.inDir+"separation.pkl"))
+        alpaka = pd.read_pickle(args.inDir+"alpaka41.pkl")
+        df = oiii_bol_lum(df,alpaka)
+        plot_Lbol(df,args)
+        print("Done saving bolo lum")
+
