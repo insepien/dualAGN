@@ -51,7 +51,7 @@ def ang_sep(pos1,pos2,on,z=0.2):
     w = WCS(imageFile)
     ra1,dec1 = w.pixel_to_world_values(pos1[0],pos1[1])
     ra2,dec2 = w.pixel_to_world_values(pos2[0],pos2[1])
-    sep_rad = (angular_separation(ra1,dec1,ra2,dec2))*u.rad
+    sep_rad = (angular_separation(ra1*u.deg,dec1*u.deg,ra2*u.deg,dec2*u.deg)).to(u.rad)
     sep_kpc = (cosmo.angular_diameter_distance(z)*sep_rad.value).to('kpc')
     return sep_rad.to(u.arcsec), sep_kpc
 
@@ -91,11 +91,16 @@ def indiv_sep_cal(df2,separation):
     separation.append(df2.loc[ind,'separation'][1])
     
 
-def plot_sep(args,separations):
-    plt.hist([a[1].value for a in separations if a!=''],bins=np.arange(11)*100)
-    plt.title("distribution of core separation")
-    plt.xlabel("Separation(kpc)")
-    plt.ylabel("Number of dual")
+def plot_sep(df2, args):
+    seps = df2['separation']
+    sep_kpc = [seps[i][1].value for i in range(len(seps)) if i!=14]
+    sep_kpc.append(seps[14][0][1].value)
+    sep_kpc.append(seps[14][1][1].value)
+    plt.hist(sep_kpc, color='darkseagreen',edgecolor='k', bins=np.logspace(np.log10(np.min(sep_kpc)),np.log10(np.max(sep_kpc)),10))
+    plt.title("Figure 2: Separation of 2-core AGNs")
+    plt.xlabel(" Separation (kpc)")
+    plt.ylabel("Number of AGN")
+    plt.xscale('log')
     savepath = os.path.expanduser(args.outDir+"sep.pdf")
     plt.savefig(savepath)
 
@@ -165,11 +170,11 @@ def plot_Lbol(df,args):
     ax[0].hist(np.log10(Lbol_2core), bins=np.linspace(45,49,11),edgecolor="black",color="darkseagreen")
     ax[0].set_xlabel("Log L$_{\mathrm{OIII \ Bol}}$ (ergs s$^{-1}$)")
     ax[0].set_ylabel("Number of AGN")
-    ax[0].set_title("L$_{\mathrm{OIII \ Bol}}$ distribution of 2-core \n(for each AGN, include core+bulge)")
+    ax[0].set_title("L$_{\mathrm{OIII \ Bol}}$ for each AGN in 2-core \n(flux summed at each core position)")
 
-    ax[1].hist([x if x>1 else 1/x for x in df['I1/I2'] ],edgecolor="black",color="darkseagreen")
-    ax[1].set_title("distribution of I1/I2 ")
-    ax[1].set_xlabel("I1/I2")
+    ax[1].hist(np.log10([x if x>1 else 1/x for x in df['I1/I2'] ]),edgecolor="black",color="darkseagreen")
+    ax[1].set_title("Flux ratio in 2 core AGNs ")
+    ax[1].set_xlabel("Log (I1/I2)")
     ax[1].set_ylabel("Number of AGN")
     fig.tight_layout()
     fig.savefig(args.outDir+"oiiiBol.pdf")
@@ -223,7 +228,7 @@ if __name__ == "__main__":
         df2['separation'] = separations
         indiv_sep_cal(df2,separations)
         save_pkl(args,df2,"separation.pkl")
-        plot_sep(args,separations)
+        plot_sep(df2, args)
         print("Done saving sep table")
 
 
