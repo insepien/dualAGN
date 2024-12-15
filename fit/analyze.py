@@ -238,5 +238,6 @@ if __name__ == "__main__":
         alpaka = pd.read_pickle(args.inDir+"alpaka41.pkl")
         df = oiii_bol_lum(df,alpaka)
         plot_Lbol(df,args)
+        save_pkl(args,df,"oiiiBol.pkl")
         print("Done saving bolo lum")
 
