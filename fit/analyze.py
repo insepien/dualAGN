@@ -8,6 +8,7 @@ from astropy.wcs import WCS
 from astropy.coordinates import angular_separation
 import astropy.units as u
 from astropy.cosmology import WMAP9 as cosmo
+from astropy.io import fits
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.family'] = 'monospace'
 
@@ -90,31 +91,58 @@ def indiv_sep_cal(df2,separation):
     separation.append(df2.loc[ind,'separation'][0])
     separation.append(df2.loc[ind,'separation'][1])
     
+def pix_to_arcsec(imageFile):
+    """convert pixel to arcsec"""
+    w = WCS(imageFile)
+    # convert pixel to degree
+    framelim = fits.getdata(imageFile).shape[0]
+    ra1,dec1 = w.pixel_to_world_values(0,0)
+    ra2,dec2 = w.pixel_to_world_values(framelim,framelim)
+    framelim_deg = angular_separation(ra1*u.degree,dec1*u.degree,ra2*u.degree,dec2*u.degree)
+    # find pixel-arsec scale
+    framelim_arcsec = framelim_deg.to('arcsec')
+    arcsec_per_pix = framelim_arcsec/framelim
+    return arcsec_per_pix, [ra1,dec1,ra2,dec2]
+
 
 def plot_sep(df2, args):
     seps = df2['separation']
     sep_kpc = [seps[i][1].value for i in range(len(seps)) if i!=14]
     sep_kpc.append(seps[14][0][1].value)
     sep_kpc.append(seps[14][1][1].value)
-    plt.hist(sep_kpc, color='darkseagreen',edgecolor='k', bins=np.logspace(np.log10(np.min(sep_kpc)),np.log10(np.max(sep_kpc)),10))
+
+    # find scale of 1 pixel
+    on = "J0820+1801"
+    imf = glob.glob(os.path.expanduser("~/research-data/agn-result/box/final_cut/"+on+"*"))[0]
+    arcsec_per_pix, _ = pix_to_arcsec(imf)
+    median_z = np.median(list(alpaka['Z']))
+    pix_in_kpc = (arcsec_per_pix.to(u.rad).value*cosmo.angular_diameter_distance(median_z)).to(u.kpc)
+
+    plt.hist(sep_kpc, color='darkseagreen',edgecolor='k', bins=np.logspace(-1,1.5,10))
+    plt.axvline(x=pix_in_kpc.value,label="1 pixel scale",c='cornflowerblue')
     plt.title("Figure 2: Separation of 2-core AGNs")
     plt.xlabel(" Separation (kpc)")
     plt.ylabel("Number of AGN")
     plt.xscale('log')
+    plt.legend()
     savepath = os.path.expanduser(args.outDir+"sep.pdf")
     plt.savefig(savepath)
 
 
 ### OIII BOLO LUM
 def oiii_bol_lum(df,alpaka):
+    df["OIII_5007_LUM_DERRED"] = None
     df['sersic index'] = None
     df['I1'] = None
     df['I2'] = None
     # add sersic index, intensity, luminosity
     for j in range(len(df)):
         # save alpaka oii lum
-        oiii_lum = alpaka[alpaka['Names'] == df.loc[j,"Obj Name"]]['OIII_5007_LUM_DERRED'].values[0]
-        df.at[j,"OIII_5007_LUM_DERRED"] = oiii_lum
+        # for agns with 2 measurements, only take meas from type 2    
+        name_mask = alpaka['Names'] == df.loc[j,"Obj Name"]
+        type_mask  = alpaka['AGN_TYPE'] == 2
+        oiii_lum = alpaka[name_mask & type_mask]['OIII_5007_LUM_DERRED'].values   
+        df.at[j,"OIII_5007_LUM_DERRED"] = np.sum(oiii_lum)
         if df.loc[j,"comp fit"] == "":
             param_names = list(df.loc[j,'param_vals_best'].keys())
 
@@ -136,8 +164,16 @@ def oiii_bol_lum(df,alpaka):
             oiii_bol = oiii_lum*800
             
             # save oiii bolo lums
-            df.at[j,"OIII_BOL_2"] = oiii_bol/(df.loc[j,'I1/I2']+1)
-            df.at[j,"OIII_BOL_1"] = oiii_bol - df.at[j,"OIII_BOL_2"]
+            if oiii_lum.shape[0] == 2:
+                if df.loc[j,'I1/I2'] < 1:
+                    df.at[j,"OIII_BOL_2"] = np.max(oiii_bol)
+                    df.at[j,"OIII_BOL_1"] = np.min(oiii_bol)
+                else:
+                    df.at[j,"OIII_BOL_1"] = np.max(oiii_bol)
+                    df.at[j,"OIII_BOL_2"] = np.min(oiii_bol)
+            else:
+                df.at[j,"OIII_BOL_2"] = oiii_bol/(df.loc[j,'I1/I2']+1)
+                df.at[j,"OIII_BOL_1"] = oiii_bol - df.at[j,"OIII_BOL_2"]
     ## COMP FIT AGNS
     for j in[8,14]:
         # get sersic index
@@ -196,7 +232,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=("analysis of fit result script"),
                             formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("--inDir", type=str, default="/home/insepien/research-data/", help="input directory")
-    parser.add_argument("--inFile", type=str, default="all_result.pkl", help="input file")
+    parser.add_argument("--inFile", type=str, default="all_results.pkl", help="input file")
     parser.add_argument("--outDir", type=str, default="/home/insepien/research-data/", help="output directory")
     parser.add_argument("--save_chi", action="store_true", help='use this flag to save chi csv table')
     parser.add_argument("--save_sep", action="store_true", help='use this flag to save separation table+histogram')
@@ -216,13 +252,15 @@ if __name__ == "__main__":
     # make copy of df and select only 2 core rows
     if args.save_sep:
         df2 = df[df.Type == '2'].loc[:,["Obj Name", "best model", "comp fit", "param_vals_best"]].copy().reset_index(drop=True)
+        alpaka = pd.read_pickle("/home/insepien/research-data/alpaka41.pkl")
         # get core separation and write to df
         separations = []
         for n in range(len(df2)):
             if df2.loc[n,'comp fit'] == "":
                 pos1 = [df2.loc[n,'param_vals_best']['X0_1'],df2.loc[n,'param_vals_best']['Y0_1']]
                 pos2 = [df2.loc[n,'param_vals_best']['X0_2'],df2.loc[n,'param_vals_best']['Y0_2']]
-                separations.append(ang_sep(pos1,pos2, on = df2.loc[n,'Obj Name']))
+                redshift = alpaka[alpaka['Names']==df2.loc[n,'Obj Name']]['Z'].values[0]
+                separations.append(ang_sep(pos1,pos2, on = df2.loc[n,'Obj Name'], z=redshift))
             else:
                 separations.append("")
         df2['separation'] = separations

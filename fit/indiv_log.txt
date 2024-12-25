@@ -1,17 +1,5 @@
-Fitting models:   0%|          | 0/13 [00:00<?, ?it/s]Fitting models:   8%|▊         | 1/13 [00:00<00:05,  2.07it/s]Fitting models:  15%|█▌        | 2/13 [00:03<00:18,  1.73s/it]Fitting models:  23%|██▎       | 3/13 [00:07<00:30,  3.05s/it]Fitting models:  31%|███       | 4/13 [00:10<00:25,  2.84s/it]Fitting models:  38%|███▊      | 5/13 [00:12<00:21,  2.71s/it]Fitting models:  46%|████▌     | 6/13 [00:21<00:33,  4.81s/it]Fitting models:  54%|█████▍    | 7/13 [00:28<00:33,  5.52s/it]Fitting models:  62%|██████▏   | 8/13 [00:36<00:31,  6.26s/it]Fitting models:  69%|██████▉   | 9/13 [00:37<00:18,  4.59s/it]Fitting models:  77%|███████▋  | 10/13 [00:37<00:09,  3.32s/it]Fitting models:  85%|████████▍ | 11/13 [00:38<00:04,  2.45s/it]Fitting models:  92%|█████████▏| 12/13 [00:42<00:02,  2.95s/it]Fitting models: 100%|██████████| 13/13 [00:43<00:00,  2.33s/it]Fitting models: 100%|██████████| 13/13 [00:43<00:00,  3.33s/it]
-Done:  J1204+0335
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:276: RuntimeWarning: divide by zero encountered in scalar divide
-  a = up_coeffs[1] / self.sma / abs(sample.gradient)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:277: RuntimeWarning: divide by zero encountered in scalar divide
-  b = up_coeffs[2] / self.sma / abs(sample.gradient)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:325: RuntimeWarning: divide by zero encountered in scalar divide
-  ea = abs(errors[2] / self.grad)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:326: RuntimeWarning: divide by zero encountered in scalar divide
-  eb = abs(errors[1] * (1.0 - eps) / self.grad)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:329: RuntimeWarning: divide by zero encountered in scalar divide
-  self.ellip_err = (abs(2.0 * errors[4] * (1.0 - eps) / self.sma
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:332: RuntimeWarning: divide by zero encountered in scalar divide
-  self.pa_err = (abs(2.0 * errors[3] * (1.0 - eps) / self.sma
+Fitting models:   0%|          | 0/11 [00:00<?, ?it/s]Fitting models:   9%|▉         | 1/11 [00:00<00:05,  1.77it/s]Fitting models:  18%|█▊        | 2/11 [00:27<02:25, 16.18s/it]Fitting models:  27%|██▋       | 3/11 [00:29<01:17,  9.65s/it]Fitting models:  36%|███▋      | 4/11 [00:30<00:43,  6.23s/it]Fitting models:  45%|████▌     | 5/11 [00:42<00:50,  8.33s/it]Fitting models:  55%|█████▍    | 6/11 [00:43<00:28,  5.71s/it]Fitting models:  64%|██████▎   | 7/11 [00:49<00:23,  5.87s/it]Fitting models:  73%|███████▎  | 8/11 [00:55<00:17,  5.84s/it]Fitting models:  82%|████████▏ | 9/11 [01:04<00:13,  6.83s/it]Fitting models:  91%|█████████ | 10/11 [01:08<00:06,  6.18s/it]Fitting models: 100%|██████████| 11/11 [01:18<00:00,  7.10s/it]Fitting models: 100%|██████████| 11/11 [01:18<00:00,  7.10s/it]
+Done:  J0918+1100
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:325: RuntimeWarning: invalid value encountered in scalar divide
   ea = abs(errors[2] / self.grad)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:326: RuntimeWarning: invalid value encountered in scalar divide
@@ -28,6 +16,10 @@ Done:  J1204+0335
   b_err = abs(b) * np.sqrt((ce[2] / up_coeffs[2])**2 + gre**2)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:332: RuntimeWarning: invalid value encountered in scalar divide
   self.pa_err = (abs(2.0 * errors[3] * (1.0 - eps) / self.sma
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:276: RuntimeWarning: divide by zero encountered in scalar divide
+  a = up_coeffs[1] / self.sma / abs(sample.gradient)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:277: RuntimeWarning: divide by zero encountered in scalar divide
+  b = up_coeffs[2] / self.sma / abs(sample.gradient)
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
@@ -59,23 +51,19 @@ ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
-ModelObjectWrapper: about to call _model.CreateModelImage()...
-ModelObjectWrapper: about to call _model.CreateModelImage()...
-ModelObjectWrapper: about to call _model.CreateModelImage()...
-ModelObjectWrapper: about to call _model.CreateModelImage()...
-Done: J1204+0335
+Done: J0918+1100
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in divide
   return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in divide
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: divide by zero encountered in log10
-  return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:157: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:46: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
   [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:86: RuntimeWarning: invalid value encountered in divide
+  return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:110: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
   fig = plt.figure(figsize=(14, 4),layout='tight')
-Done:  J1204+0335
+Done:  J0918+1100

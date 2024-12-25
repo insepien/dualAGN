@@ -6,12 +6,8 @@ log_file="indiv_log.txt"
 # Clear the log file before running the script
 > "$log_file"
 
-objectName='J1204+0335'
+objectName='J0918+1100'
 
-# python3 fit.py --oname "$objectName" --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit" --PA 10 >> "$log_file" 2>&1
-# python3 makePlotComps.py --oname "$objectName" --sma 10 --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit" --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit_comp" >> "$log_file" 2>&1
-# python3 plot_fit_with1d.py --oname "$objectName" --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit_comp" --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n0to10"  >> "$log_file" 2>&1
-
-python3 fit.py --oname "$objectName" --inDir "~/research-data/agn-result/box/final_cut/" --inFile "J1204+0335_200.fits" --outDir "/home/insepien/research-data/agn-result/fit" --PA 10 >> "$log_file" 2>&1
-python3 makePlotComps.py --oname "$objectName" --sma 10 --inDir "/home/insepien/research-data/agn-result/fit" --outDir "/home/insepien/research-data/agn-result/fit" >> "$log_file" 2>&1
-python3 plot_fit_with1d.py --oname "$objectName" --inDir "/home/insepien/research-data/agn-result/fit" --outDir "/home/insepien/research-data/agn-result/fit"  >> "$log_file" 2>&1
+python3 fit.py --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/" --inFile "J0918+1100.fits" --oname "$objectName" --original --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit" --PA 160 --ELL 0.5 --RE 3  >> "$log_file" 2>&1
+python3 makePlotComps.py --oname "$objectName" --sma 10 --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit" --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit_comp" >> "$log_file" 2>&1
+python3 plot_fit_with1d.py --oname "$objectName" --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit_comp" --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6"  >> "$log_file" 2>&1

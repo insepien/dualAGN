@@ -76,27 +76,25 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
     # exponential
     funcset_dict_serexp= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
                     'function_list': [sersic_dict,exp_dict]}
-    funcset_dict_expserpsf= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
-                    'function_list': [exp_dict,sersic_dict,psf_dict]}
+    funcset_dict_serexppsf= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [sersic_dict,exp_dict,psf_dict]}
     
     #========model dict
     funcset = {
-        "sersic,sersic":[funcset_dict_sersic0,funcset_dict_sersic1],
-        "sersic+sersic":[funcset_dict_serser0],
-        "sersic+sersic+sersic":[funcset_dict_serserser],
-        
-        "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
-        "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
-        "psf+sersic,psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
-        "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
-        "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
-        
         "sersic": [funcset_dict_sersic0],
+        # 1 core
         "psf+sersic": [funcset_dict_psfser0],
-        "exp+sersic+psf":[funcset_dict_expserpsf],
         "psf,sersic": [funcset_dict_psf0,funcset_dict_sersic1],
         "psf,sersic+exp":[funcset_dict_psf0,funcset_dict_serexp],
-        
+        "exp+sersic+psf":[funcset_dict_serexppsf],
+        # 2 core
+        "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
+        "psf+sersic,psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
+        # intersting models
+        "sersic+sersic+sersic":[funcset_dict_serserser],
+        "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
+        "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
+        "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
     }
     return funcset
 
@@ -193,13 +191,17 @@ if __name__=="__main__":
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("--inDir", type=str, default="~/research-data/agn-result/fit/final_fit_nb/", help="path to cut out directory")
-    parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
     parser.add_argument("--oname", type=str, help="object name")
-    parser.add_argument("--inFile", type=str, help="cutout file")
-    parser.add_argument("--outDir", type=str, default="~/research-data/agn-result/fit/final_fit", help="output directory")
-    parser.add_argument("--plotSkyHist", action="store_true")
-    parser.add_argument("--original", action="store_true", default='use this flag if fitting original, not sky subtracted image')
+    parser.add_argument("--outDir", type=str, default="~/research-data/agn-result/fit/final_fit", help="output directory") 
+    # fit guess params
     parser.add_argument("--PA", type=float, default=200., help='guess position angle')
+    parser.add_argument("--ELL", type=float, default=200., help='guess ellipticity')
+    parser.add_argument("--RE", type=float, default=200., help='guess effective radius')
+    # use this if loading .fits files
+    parser.add_argument("--inFile", type=str, help="cutout file")
+    parser.add_argument("--original", action="store_true", default='use this flag if fitting original, not sky subtracted image')
+    parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
+    parser.add_argument("--plotSkyHist", action="store_true")
     args = parser.parse_args()
     
     # load cutout file
@@ -207,7 +209,7 @@ if __name__=="__main__":
         cutoutPath = os.path.expanduser(args.inDir+args.inFile)
     else:
         cutoutPath = os.path.expanduser(args.inDir+args.oname+".pkl")
-    if args.inFile[-4:] =="fits":
+    if args.inFile and args.inFile[-4:] =="fits":
         imageAGN = fits.getdata(cutoutPath)
     else:
         with open(cutoutPath, 'rb') as f:
@@ -238,7 +240,7 @@ if __name__=="__main__":
                          Xss0=xs[0], Yss0=ys[0], 
                          Xss1=xs[1], Yss1=ys[1],
                          Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
-                         PA_ss=args.PA, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
+                         PA_ss=args.PA, ell_ss=args.ELL, n_ss=1, I_ss=1, r_ss=args.RE, Itot=1500,
                          PA_lim=[0,360], ell_lim=[0.0,1.0],
                          Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
                          midf=midF, 
