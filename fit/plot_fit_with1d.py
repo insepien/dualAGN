@@ -33,14 +33,21 @@ def plot_isophotes(ax,isolist,num_aper=10):
         ax.plot(x, y, color='white',linewidth="0.5")
 
 
-def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,args):
+def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,serinds,args):
     """plot 2D model components and check residual with model image"""
-    clmap = sns.color_palette(args.cmap, as_cmap=True)
+    clmap = sns.color_palette(args.cmap, as_cmap=True).reversed()
     ncom = len(comp_names)
     fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(ncom*4,3))
     im = [ax[i].imshow(comp_ims[i],norm='symlog',cmap=clmap) for i in range(ncom)]
-    [ax[i].text(0.05, 0.05, f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", transform=ax[i].transAxes, fontsize=8, color='k') for i in range(ncom-1)]
-    [ax[i].set_title(comp_names[i]) for i in range(ncom)]
+    [ax[i].text(0.05, 0.05, f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", transform=ax[i].transAxes, fontsize=8, color='w') for i in range(ncom-1)]
+    count_ind  = 0
+    for k in range(ncom):
+        if "bulge" in comp_names[k]:
+            axtit = f"{comp_names[k][:6]} {count_ind}, n={serinds[count_ind]:.2f}"
+            count_ind+=1
+        else:
+            axtit = comp_names[k]
+        ax[k].set_title(axtit)
     im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],norm='symlog',cmap=clmap))
     ax[-1].set_title("model-comps")
     [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
@@ -100,9 +107,10 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     return sma_arcsec, sma_kpc, mu_data, mu_models, skycoords
     
 
-def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords,colormap):
-    colors = sns.color_palette(colormap, len(comp_names)+2)[1:]
-    cmapp = sns.color_palette(colormap, as_cmap=True).reversed()
+def plot_everything(pdf,on,image,m,modelname,comp_names,fs,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords):
+    colors = sns.color_palette("colorblind", len(comp_names))
+    ls = ['-', '--', '-.', ':']
+    cmapp = sns.color_palette(args.cmap, as_cmap=True).reversed()
     if len(modelname) > 16 and ',' in modelname:
         modelname.replace('\n','')
         modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
@@ -128,19 +136,19 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fsr,sma_arcsec,sma_kpc,m
     im2 = ax[2].imshow(image-m,cmap=cmapp)
     fig.colorbar(im2,ax=ax[2],orientation='horizontal',location='bottom',pad=0.05)
     fig.colorbar(im[1],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
-    [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,$\chi^2_r$={fsr:.3f}'][i]) for i in range(3)]
+    [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
     # radial plot data
-    ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c=colors[-1])
-    ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color=colors[-1],alpha=0.5)
+    ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c="k")
+    ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color="k",alpha=0.2)
     # radial plot model
-    ax[3].plot(sma_arcsec[1:],mu_models[-1][0][1:],label="model",c=colors[-2],linestyle="dashdot")
-    ax[3].fill_between(sma_arcsec[1:].value, mu_models[-1][1][1:],mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
+    #ax[3].plot(sma_arcsec[1:],mu_models[-1][0][1:],label="model",c=colors[-2],linestyle="dashdot")
+    #ax[3].fill_between(sma_arcsec[1:].value, mu_models[-1][1][1:],mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
     # radial plot components
-    [ax[3].plot(sma_arcsec[1:],mu_models[i][0][1:],label=comp_names[i],linestyle="dashdot",c=colors[i]) for i in range(len(comp_names)-1)]
+    [ax[3].plot(sma_arcsec[1:],mu_models[i][0][1:],label=comp_names[i],linestyle=ls[i],c=colors[i]) for i in range(len(comp_names)-1)]
     [ax[3].fill_between(sma_arcsec[1:].value,mu_models[i][1][1:],mu_models[i][2][1:],color=colors[i],alpha=0.5) for i in range(len(comp_names)-1)]
-    ax[4].plot(sma_kpc[1:],mu_data[0][1:]-mu_models[-1][0][1:],c=colors[-2],linestyle="dashdot")
-    ax[4].fill_between(sma_kpc[1:].value,mu_data[1][1:]-mu_models[-1][1][1:],mu_data[2][1:]-mu_models[-1][2][1:],color=colors[-2],alpha=0.5)
-    ax[4].axhline(y=0,linestyle='--',c=colors[1],lw=1)
+    ax[4].plot(sma_kpc[1:],mu_data[0][1:]-mu_models[-1][0][1:],c='rebeccapurple',linestyle="dashdot")
+    ax[4].fill_between(sma_kpc[1:].value,mu_data[1][1:]-mu_models[-1][1][1:],mu_data[2][1:]-mu_models[-1][2][1:],color='rebeccapurple',alpha=0.5)
+    ax[4].axhline(y=0,linestyle='--',c="k",alpha=0.5,lw=1)
     # format ticks
     ax[3].invert_yaxis()
     ax[3].set_xlabel("R[arcsec]")
@@ -172,6 +180,16 @@ if __name__=="__main__":
     parser.add_argument('--cmap', type=str, default="ch:s=-.3,r=.6")
     args = parser.parse_args()
     
+    # load fit file to get sersic index
+    fitPath = os.path.expanduser("~/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit/"+args.oname+".pkl")
+    with open (fitPath, "rb") as f:
+        d_fit = pickle.load(f)
+    param_vals = [d_fit['fitResults'][i].params for i in range(len(d_fit['fitResults']))]
+    param_names = d_fit['paramNames']
+    ns = []
+    for i in range(len(param_names)):
+        dic = dict(zip(param_names[i],param_vals[i]))
+        ns.append([dic[i] for i in dic if i[0]=="n"])
     # load fit component file
     compPath = os.path.expanduser(os.path.join(args.inDir, args.oname+"_comp.pkl"))
     with open (compPath, "rb") as f:
@@ -208,9 +226,8 @@ if __name__=="__main__":
                                                                                   isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                                                                   hdu_exp=hdu0,z=0.2)
             plot_everything(pdf,on=args.oname,image=imageAGN,m=model.comp_im[-1],modelname= model.model_name,
-                            comp_names=model.comp_name, fsr=model.fit_result.fitStatReduced, 
-                            sma_arcsec=sma_Arcsec,sma_kpc=sma_Kpc,mu_data=mu_Data,mu_models=mu_Models,skycoords=skyCoords,
-                            colormap=args.cmap)
+                            comp_names=model.comp_name, fs=model.fit_result.fitStat, fsr=model.fit_result.fitStatReduced, 
+                            sma_arcsec=sma_Arcsec,sma_kpc=sma_Kpc,mu_data=mu_Data,mu_models=mu_Models,skycoords=skyCoords)
             plot_model_components(pdf,comp_ims=model.comp_im,comp_names=model.comp_name, comp_pos=model.comp_pos,
-                                  isolist_comps=model.iso_comp,args=args)
+                                  isolist_comps=model.iso_comp,serinds=ns[i],args=args)
     print("Done: ", args.oname)
