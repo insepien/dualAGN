@@ -13,15 +13,24 @@ def make_model_components(config,imshape):
     comp_names = config.functionLabelList()
     comp_ims=[]
     comp_pos = []
+    # at each position in model
     for i in range(len(config.getModelAsDict()['function_sets'])):
+        # get position and function sets 
         posX = config.getModelAsDict()['function_sets'][i]['X0']
         posY = config.getModelAsDict()['function_sets'][i]['Y0']
         functions = config.getModelAsDict()['function_sets'][i]['function_list']
+        # for each function set
         for j in range(len(functions)):
+            # fix pyimfit fault for fixed params
+            if functions[j]['label'] =="bulge n=1":
+                functions[j]['parameters']['n'] = [1, "fixed"]
+            # create dictionary for each component 
             funcset_dict = {'X0': posX, 'Y0': posY, 'function_list': [functions[j]]}
             model_dict = {'function_sets': [funcset_dict]}
+            # make fitter and component image
             model = pyimfit.ModelDescription.dict_to_ModelDescription(model_dict)
             imfit_fitter = pyimfit.Imfit(model,epsf)
+            # save to list
             comp_ims.append(imfit_fitter.getModelImage(shape=(imshape,imshape)))
             comp_pos.append([posX[0],posY[0]])
     return comp_ims, comp_pos, comp_names

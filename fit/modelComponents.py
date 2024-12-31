@@ -36,7 +36,11 @@ def makeModelDict(PA_ss, ell_ss, n_ss, I_ss, r_ss, Itot,
     exponential = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell': [ell_ss, ell_lim[0],ell_lim[1]], 
                    'I_0': [I_ss, Iss_lim[0],Iss_lim[1]], 'h': [h1, h_lim[0],h_lim[1]]}
     exp_dict = {'name': "Exponential", 'label': "disk", 'parameters':exponential}
-    return sersic2_dict, sersic1_dict, sersic_dict, psf_dict, flatbar_dict, exp_dict
+    # sersic with n=1 (exponential)
+    sersic_n1 = {'PA': [PA_ss, PA_lim[0],PA_lim[1]], 'ell_bulge': [ell_ss, ell_lim[0],ell_lim[1]], 'n': [1, "fixed"],
+    'I_e': [I_ss*4, Iss_lim[0],Iss_lim[1]], 'r_e': [r_ss/4, rss_lim[0],rss_lim[1]]}
+    sersic_n1_dict = {'name': "Sersic", 'label': "bulge n=1", 'parameters': sersic_n1}
+    return sersic_n1_dict, sersic2_dict, sersic1_dict, sersic_dict, psf_dict, flatbar_dict, exp_dict
 
 
 class modelComps:

@@ -13,6 +13,8 @@ import seaborn as sns
 import glob
 from astropy.wcs import WCS
 from astropy.coordinates import angular_separation
+import pandas as pd
+from scipy.stats import chi2
 
 
 medium_font_size = 14 
@@ -56,6 +58,46 @@ def plot_model_components(pdf,comp_ims,comp_names,comp_pos,isolist_comps,serinds
              plot_isophotes(ax[i],isolist_comps[i],num_aper=5)
     fig.tight_layout()
     pdf.savefig();
+
+
+def cal_pval(df,i,j,sig_lev=0.05):
+    """check if models fit equally well (null hypothesis)
+        calculate p-value given 2 row indices in summary df using difference in chi2 and dof
+        compare with significance level, default 0.05, to reject null"""
+    del_dof = np.abs(df.loc[i,"dof"] - df.loc[j,"dof"])
+    del_chi = np.abs(df.loc[i,'chi2'] - df.loc[j,'chi2'])
+    df.at[i,"del chi"] = del_chi
+    df.at[i,"reject null"] = (1 - chi2.cdf(del_chi,del_dof)) < sig_lev
+
+
+def test_chi_diff(d_fit):
+    n = len(d_fit['fitResults'])
+    chisq = np.round([d_fit['fitResults'][i].fitStat for i in range(n)])
+    modelnames = list(d_fit['modelNames'].keys())
+    dofs = [len(d_fit['fitResults'][i].params) for i in range(n)]
+    df = pd.DataFrame(data=[modelnames,dofs,chisq], index=['model', "dof",'chi2']).T
+    # get index of the nested model, i.e the 11th model is nested in model of row 12, 9 nested in 11, etc.
+    nest_dict = {0: None,
+                1: 0,
+                2: 1,
+                3: 2,
+                4: 2,
+                5: 1,
+                6: 1,
+                7: 1,
+                8: 7,
+                9: 0,
+                10: 1,
+                11: 9,
+                12: 11}
+    df['nests ind'] = list(nest_dict.values())
+    # check if model at index k fit equally well as model with index in "nests ind"
+    df['del chi'] = None
+    df['reject null'] = None
+    for k in range(1,n):
+        cal_pval(df, k, df.loc[k,"nests ind"])
+    return df
+
 
 
 def fit_stat_1d(iso_data,iso_model,nparams,cut=0.8):
@@ -107,7 +149,7 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     return sma_arcsec, sma_kpc, mu_data, mu_models, skycoords
     
 
-def plot_everything(pdf,on,image,m,modelname,comp_names,fs,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords):
+def plot_everything(pdf,on,image,m,modelname,comp_names,fs,fsr,sma_arcsec,sma_kpc,mu_data,mu_models,skycoords,model_index):
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
     cmapp = sns.color_palette(args.cmap, as_cmap=True).reversed()
@@ -136,7 +178,7 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fs,fsr,sma_arcsec,sma_kp
     im2 = ax[2].imshow(image-m,cmap=cmapp)
     fig.colorbar(im2,ax=ax[2],orientation='horizontal',location='bottom',pad=0.05)
     fig.colorbar(im[1],ax=[ax[0],ax[1]],orientation='vertical',location='right',shrink=0.5)
-    [ax[i].set_title([on,f"Model:\n{modelname}",f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
+    [ax[i].set_title([on,f"Model {model_index}:\n{modelname}",f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
     # radial plot data
     ax[3].plot(sma_arcsec[1:],mu_data[0][1:],label="data",c="k")
     ax[3].fill_between(sma_arcsec[1:].value,mu_data[1][1:],mu_data[2][1:],color="k",alpha=0.2)
@@ -162,6 +204,14 @@ def plot_everything(pdf,on,image,m,modelname,comp_names,fs,fsr,sma_arcsec,sma_kp
     ax[4].set_ylim((-0.5,0.5))
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
+
+    # add chi2 test stats
+    rejectNull = str(df_chi.loc[model_index,'reject null'])
+    delChi = df_chi.loc[model_index,"del chi"]
+    compare_ind = df_chi.loc[model_index, "nests ind"]
+    fig.text(0.01, 0.99, 
+             f"Compare model: {compare_ind}\nReject null: {rejectNull}\n $\Delta \chi^2$={delChi}", 
+            verticalalignment='top', horizontalalignment='left')
     pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 
 
@@ -218,16 +268,20 @@ if __name__=="__main__":
         sorted_ind = np.argsort([d[m].fit_result.fitStatReduced for m in model_names])
         fs_lab = "$\chi^2$"
         fstat = 'fitStat'
+
+    # do chi2 diff test
+    df_chi = test_chi_diff(d_fit)
     
     with PdfPages(savepath) as pdf:
-        for i in sorted_ind:
-            model = d[model_names[i]]
+        for model_ind in sorted_ind:
+            model = d[model_names[model_ind]]
             sma_Arcsec, sma_Kpc, mu_Data,mu_Models,skyCoords = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
                                                                                   isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                                                                   hdu_exp=hdu0,z=0.2)
             plot_everything(pdf,on=args.oname,image=imageAGN,m=model.comp_im[-1],modelname= model.model_name,
                             comp_names=model.comp_name, fs=model.fit_result.fitStat, fsr=model.fit_result.fitStatReduced, 
-                            sma_arcsec=sma_Arcsec,sma_kpc=sma_Kpc,mu_data=mu_Data,mu_models=mu_Models,skycoords=skyCoords)
+                            sma_arcsec=sma_Arcsec,sma_kpc=sma_Kpc,mu_data=mu_Data,mu_models=mu_Models,skycoords=skyCoords,
+                            model_index = model_ind)
             plot_model_components(pdf,comp_ims=model.comp_im,comp_names=model.comp_name, comp_pos=model.comp_pos,
-                                  isolist_comps=model.iso_comp,serinds=ns[i],args=args)
+                                  isolist_comps=model.iso_comp,serinds=ns[model_ind],args=args)
     print("Done: ", args.oname)
