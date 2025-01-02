@@ -78,18 +78,20 @@ def test_chi_diff(d_fit):
     df = pd.DataFrame(data=[modelnames,dofs,chisq], index=['model', "dof",'chi2']).T
     # get index of the nested model, i.e the 11th model is nested in model of row 12, 9 nested in 11, etc.
     nest_dict = {0: None,
-                1: 0,
-                2: 1,
-                3: 2,
-                4: 2,
-                5: 1,
-                6: 1,
-                7: 1,
-                8: 7,
-                9: 0,
-                10: 1,
-                11: 9,
-                12: 11}
+            1: 0,
+            2: 1,
+            3: 0,
+            4: 3,
+            5: 7,
+            6: 8,
+            7: 3,
+            8: 3,
+            9: 3,
+            10: 9,
+            11: 1,
+            12: 3,
+            13: 11,
+            14: 13}
     df['nests ind'] = list(nest_dict.values())
     # check if model at index k fit equally well as model with index in "nests ind"
     df['del chi'] = None
