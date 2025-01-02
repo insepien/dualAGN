@@ -53,20 +53,29 @@ class modelComps:
         self.iso_comp = None
 
     def make_model_isophotes(self,isolist_data):
+        """sample model components along isophotes from data fit
+            center point is midframe"""
         isolist_comps=[]
         midf = self.comp_im[0].shape[0]//2
+        # flag: if psf, use circular annulus
         circ = [self.comp_name[i]=='psf' for i in range(len(self.comp_name))]
         for i in range(len(self.comp_name)):
+            # list to store one component's isophote
             isolist_ = []
             for iso in isolist_data[1:]:
+                # get config of each data isophote
                 g = iso.sample.geometry
                 ell = 0 if circ[i] else g.eps
+                # make isophote
                 gn = EllipseGeometry(g.x0,g.y0, g.sma, ell, g.pa)
+                # sample the image component along isophote
                 sample = EllipseSample(self.comp_im[i],g.sma,geometry=gn)
                 sample.update()
                 iso_ = Isophote(sample,0,True,0)
                 isolist_.append(iso_)
+            # convert to isophote list object
             isolist = IsophoteList(isolist_)
+            # add central brightness
             g = EllipseGeometry(midf,midf, 0.0, 0., 0.)
             sample = CentralEllipseSample(self.comp_im[i], 0., geometry=g)
             fitter = CentralEllipseFitter(sample)
