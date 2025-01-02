@@ -37,7 +37,8 @@ def make_model_components(config,imshape):
 
 
 def profile_1D(semiA,image,PA=180,ell=0.5):
-        """make 1D elliptical profiles"""
+        """make 1D elliptical profiles
+            given an initial isophote guess, ellipse.fit_image will auto detect isophotes"""
         # create guess ellipse
         pos0 = image.shape[0]//2
         geometry = EllipseGeometry(x0=pos0, y0=pos0, sma=semiA, eps=ell,
@@ -103,15 +104,10 @@ if __name__=="__main__":
     fit_results = d['fitResults']
     param_names = d['paramNames'] 
 
-
     # make model functions    
     Imax = image.max()
     framelim = image.shape[0]
     midF=framelim//2
-    # sersic_dict0, sersic_dict, psf_dict, flatbar_dict, exp_dict = makeModelDict(PA_ss=200, ell_ss=0.1, n_ss=1, I_ss=1, r_ss=20, Itot=1500,
-    #                                                                  PA_lim=[0,360], ell_lim=[0.0,1.0],
-    #                                                                  Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
-    #                                                                  h1=10,h2=10,h_lim=[0.1,framelim],alpha=0.1,alpha_lim=[0.1,framelim])
     
     isolist_data = make_data_isophotes(data=image,sma=args.sma,midFrame=midF,pa0=args.pa)
     data_to_save = {}
