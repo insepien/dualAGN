@@ -84,6 +84,12 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
     funcset_dict_sersern1psf= {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
                     'function_list': [sersic_dict,sersic_n1_dict,psf_dict]}
     
+    # bar
+    funcset_dict_bar0 = {'X0': [Xss0,Xlim[0],Xlim[1]], 'Y0': [Yss0, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict]}
+    funcset_dict_barser = {'X0': [midf,Xlim[0],Xlim[1]], 'Y0': [midf, Ylim[0],Ylim[1]], 
+                    'function_list': [flatbar_dict,sersic_dict]}
+    
     #========model dict
     funcset = {
         "sersic": [funcset_dict_sersic0],
@@ -104,6 +110,8 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
         "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
         "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
         "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
+        "bar+sersic":[funcset_dict_barser],
+        "bar,sersic":[funcset_dict_bar0, funcset_dict_sersic1]
     }
     return funcset
 
