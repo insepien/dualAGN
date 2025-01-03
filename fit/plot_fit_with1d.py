@@ -91,7 +91,9 @@ def test_chi_diff(d_fit):
             11: 1,
             12: 3,
             13: 11,
-            14: 13}
+            14: 13,
+            15: 0,
+            16: 15}
     df['nests ind'] = list(nest_dict.values())
     # check if model at index k fit equally well as model with index in "nests ind"
     df['del chi'] = None
