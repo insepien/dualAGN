@@ -1,15 +1,5 @@
-Fitting models:   0%|          | 0/17 [00:00<?, ?it/s]Fitting models:   6%|▌         | 1/17 [00:01<00:20,  1.25s/it]Fitting models:  12%|█▏        | 2/17 [00:05<00:48,  3.20s/it]Fitting models:  18%|█▊        | 3/17 [00:08<00:39,  2.83s/it]Fitting models:  24%|██▎       | 4/17 [00:08<00:23,  1.79s/it]Fitting models:  29%|██▉       | 5/17 [00:10<00:20,  1.75s/it]Fitting models:  35%|███▌      | 6/17 [00:19<00:49,  4.52s/it]Fitting models:  41%|████      | 7/17 [00:26<00:50,  5.07s/it]Fitting models:  47%|████▋     | 8/17 [00:29<00:40,  4.47s/it]Fitting models:  53%|█████▎    | 9/17 [00:34<00:36,  4.56s/it]Fitting models:  59%|█████▉    | 10/17 [00:34<00:23,  3.37s/it]Fitting models:  65%|██████▍   | 11/17 [00:41<00:25,  4.25s/it]Fitting models:  71%|███████   | 12/17 [00:41<00:15,  3.12s/it]Fitting models:  76%|███████▋  | 13/17 [00:45<00:13,  3.30s/it]Fitting models:  82%|████████▏ | 14/17 [00:53<00:13,  4.64s/it]Fitting models:  88%|████████▊ | 15/17 [00:57<00:09,  4.62s/it]Fitting models:  94%|█████████▍| 16/17 [00:58<00:03,  3.52s/it]Fitting models: 100%|██████████| 17/17 [01:01<00:00,  3.29s/it]Fitting models: 100%|██████████| 17/17 [01:01<00:00,  3.61s/it]
-Done:  J0906+1840
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/numpy/core/fromnumeric.py:3504: RuntimeWarning: Mean of empty slice.
-  return _methods._mean(a, axis=axis, dtype=dtype,
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/numpy/core/_methods.py:129: RuntimeWarning: invalid value encountered in scalar divide
-  ret = ret.dtype.type(ret / rcount)
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/numpy/core/_methods.py:206: RuntimeWarning: Degrees of freedom <= 0 for slice
-  ret = _var(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/numpy/core/_methods.py:163: RuntimeWarning: invalid value encountered in divide
-  arrmean = um.true_divide(arrmean, div, out=arrmean,
-/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/numpy/core/_methods.py:198: RuntimeWarning: invalid value encountered in scalar divide
-  ret = ret.dtype.type(ret / rcount)
+Fitting models:   0%|          | 0/17 [00:00<?, ?it/s]Fitting models:   6%|▌         | 1/17 [00:00<00:03,  4.88it/s]Fitting models:  12%|█▏        | 2/17 [00:01<00:12,  1.17it/s]Fitting models:  18%|█▊        | 3/17 [00:03<00:18,  1.30s/it]Fitting models:  24%|██▎       | 4/17 [00:03<00:13,  1.00s/it]Fitting models:  29%|██▉       | 5/17 [00:04<00:08,  1.43it/s]Fitting models:  35%|███▌      | 6/17 [00:05<00:09,  1.22it/s]Fitting models:  41%|████      | 7/17 [00:07<00:11,  1.19s/it]Fitting models:  47%|████▋     | 8/17 [00:07<00:08,  1.06it/s]Fitting models:  53%|█████▎    | 9/17 [00:08<00:07,  1.04it/s]Fitting models:  59%|█████▉    | 10/17 [00:09<00:05,  1.19it/s]Fitting models:  65%|██████▍   | 11/17 [00:11<00:07,  1.25s/it]Fitting models:  71%|███████   | 12/17 [00:11<00:05,  1.04s/it]Fitting models:  76%|███████▋  | 13/17 [00:12<00:03,  1.11it/s]Fitting models:  82%|████████▏ | 14/17 [00:17<00:06,  2.14s/it]Fitting models:  88%|████████▊ | 15/17 [00:22<00:06,  3.11s/it]Fitting models:  94%|█████████▍| 16/17 [00:23<00:02,  2.45s/it]Fitting models: 100%|██████████| 17/17 [00:26<00:00,  2.61s/it]Fitting models: 100%|██████████| 17/17 [00:26<00:00,  1.57s/it]
+Done:  J0926+0724
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:325: RuntimeWarning: invalid value encountered in scalar divide
   ea = abs(errors[2] / self.grad)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:326: RuntimeWarning: invalid value encountered in scalar divide
@@ -24,6 +14,12 @@ Done:  J0906+1840
   a_err = abs(a) * np.sqrt((ce[1] / up_coeffs[1])**2 + gre**2)
 /home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:296: RuntimeWarning: invalid value encountered in scalar divide
   b_err = abs(b) * np.sqrt((ce[2] / up_coeffs[2])**2 + gre**2)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:276: RuntimeWarning: divide by zero encountered in scalar divide
+  a = up_coeffs[1] / self.sma / abs(sample.gradient)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:277: RuntimeWarning: divide by zero encountered in scalar divide
+  b = up_coeffs[2] / self.sma / abs(sample.gradient)
+/home/insepien/miniconda3/envs/usc/lib/python3.11/site-packages/photutils/isophote/isophote.py:332: RuntimeWarning: invalid value encountered in scalar divide
+  self.pa_err = (abs(2.0 * errors[3] * (1.0 - eps) / self.sma
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
@@ -69,17 +65,17 @@ ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
 ModelObjectWrapper: about to call _model.CreateModelImage()...
-Done: J0906+1840
+Done: J0926+0724
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:139: RuntimeWarning: divide by zero encountered in divide
   return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:139: RuntimeWarning: invalid value encountered in log10
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:139: RuntimeWarning: invalid value encountered in divide
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:139: RuntimeWarning: divide by zero encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:219: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:55: UserWarning: All values for SymLogScale are below linthresh, making it effectively linear. You likely should lower the value of linthresh. 
   [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:139: RuntimeWarning: divide by zero encountered in log10
-  return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:164: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
   fig = plt.figure(figsize=(14, 4),layout='tight')
-Done:  J0906+1840
+Done:  J0926+0724
