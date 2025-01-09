@@ -58,9 +58,9 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
                     'function_list': [psf_dict]}
     # same center psf+sersic
     funcset_dict_psfser0 = {'X0': [X0,Xlim[0],Xlim[1]], 'Y0': [Y0, Ylim[0],Ylim[1]], 
-                    'function_list': [psf_dict,sersic_dict]}
+                    'function_list': [sersic_dict,psf_dict]}
     funcset_dict_psfser1 = {'X0': [X1,Xlim[0],Xlim[1]], 'Y0': [Y1, Ylim[0],Ylim[1]], 
-                    'function_list': [psf_dict,sersic_dict]}  
+                    'function_list': [sersic_dict,psf_dict]}  
     # separate sersic
     funcset_dict_sersic0 = {'X0': [Xss0,Xsslim[0],Xsslim[1]], 'Y0': [Yss0,Ysslim[0],Ysslim[1]], 
                    'function_list': [sersic_dict]}
@@ -103,11 +103,11 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
         "exp+sersic+psf":[funcset_dict_serexppsf],
         "sersic+sersic(n1)+psf":[funcset_dict_sersern1psf],
         # 2 core
-        "psf+sersic,psf": [funcset_dict_psfser0,funcset_dict_psf1],
-        "psf+sersic,psf+sersic": [funcset_dict_psfser0,funcset_dict_psfser1],
+        "sersic+psf,psf": [funcset_dict_psfser0,funcset_dict_psf1],
+        "sersic+psf,sersic+psf": [funcset_dict_psfser0,funcset_dict_psfser1],
         # intersting models
         "sersic+sersic+sersic":[funcset_dict_serserser],
-        "psf+sersic,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
+        "sersic+psf,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
         "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
         "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
         "bar+sersic":[funcset_dict_barser],
@@ -214,6 +214,8 @@ if __name__=="__main__":
     parser.add_argument("--PA", type=float, default=200., help='guess position angle')
     parser.add_argument("--ELL", type=float, default=200., help='guess ellipticity')
     parser.add_argument("--RE", type=float, default=200., help='guess effective radius')
+    parser.add_argument("--X1", type=float, help='guess 2nd x pos')
+    parser.add_argument("--Y1", type=float, help='guess 2nd y pos')
     # use this if loading .fits files
     parser.add_argument("--inFile", type=str, help="cutout file")
     parser.add_argument("--original", action="store_true", default='use this flag if fitting original, not sky subtracted image')
@@ -252,16 +254,21 @@ if __name__=="__main__":
     else:
         imageAGN_bs = imageAGN
     # make models
+    if args.X1:
+        xs[0] = midF
+        ys[0] = midF
+        xs[1] = args.X1
+        ys[1] = args.Y1
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
-                         X1=xs[1], Y1=ys[1], 
-                         Xss0=xs[0], Yss0=ys[0], 
-                         Xss1=xs[1], Yss1=ys[1],
-                         Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
-                         PA_ss=args.PA, ell_ss=args.ELL, n_ss=1, I_ss=1, r_ss=args.RE, Itot=1500,
-                         PA_lim=[0,360], ell_lim=[0.0,1.0],
-                         Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
-                         midf=midF, 
-                         h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
+                        X1=xs[1], Y1=ys[1], 
+                        Xss0=xs[0], Yss0=ys[0], 
+                        Xss1=xs[1], Yss1=ys[1],
+                        Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
+                        PA_ss=args.PA, ell_ss=args.ELL, n_ss=1, I_ss=1, r_ss=args.RE, Itot=1500,
+                        PA_lim=[0,360], ell_lim=[0.0,1.0],
+                        Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
+                        midf=midF, 
+                        h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
 
     # fit and save results
     configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
