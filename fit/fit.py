@@ -214,6 +214,8 @@ if __name__=="__main__":
     parser.add_argument("--PA", type=float, default=200., help='guess position angle')
     parser.add_argument("--ELL", type=float, default=200., help='guess ellipticity')
     parser.add_argument("--RE", type=float, default=200., help='guess effective radius')
+    parser.add_argument("--X0", type=float, help='guess 1st x pos')
+    parser.add_argument("--Y0", type=float, help='guess 1st y pos')
     parser.add_argument("--X1", type=float, help='guess 2nd x pos')
     parser.add_argument("--Y1", type=float, help='guess 2nd y pos')
     # use this if loading .fits files
@@ -255,10 +257,14 @@ if __name__=="__main__":
         imageAGN_bs = imageAGN
     # make models
     if args.X1:
-        xs[0] = midF
-        ys[0] = midF
-        xs[1] = args.X1
-        ys[1] = args.Y1
+        if args.X0:
+            xs[0] = args.X0
+            ys[0] = args.Y0
+        else:
+            xs[0] = args.midF
+            ys[0] = args.midF
+            xs[1] = args.X1
+            ys[1] = args.Y1
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
                         X1=xs[1], Y1=ys[1], 
                         Xss0=xs[0], Yss0=ys[0], 

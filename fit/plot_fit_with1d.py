@@ -69,6 +69,10 @@ def cal_pval(df,i,j,sig_lev=0.05):
     df.at[i,"del chi"] = del_chi
     df.at[i,"reject null"] = (1 - chi2.cdf(del_chi,del_dof)) < sig_lev
 
+def add_model(d_fit,nest_dict,args):
+    new_model = list(d_fit['modelNames'].keys())[-1]
+    nest_dict[new_model] = args.nestModelName
+    return nest_dict
 
 def test_chi_diff(d_fit):
     n = len(d_fit['fitResults'])
@@ -77,24 +81,28 @@ def test_chi_diff(d_fit):
     dofs = [len(d_fit['fitResults'][i].params) for i in range(n)]
     df = pd.DataFrame(data=[modelnames,dofs,chisq], index=['model', "dof",'chi2']).T
     # get index of the nested model, i.e the 11th model is nested in model of row 12, 9 nested in 11, etc.
-    nest_dict = {0: None,
-            1: 0,
-            2: 1,
-            3: 0,
-            4: 3,
-            5: 7,
-            6: 8,
-            7: 3,
-            8: 3,
-            9: 3,
-            10: 9,
-            11: 1,
-            12: 3,
-            13: 11,
-            14: 13,
-            15: 0,
-            16: 15}
-    df['nests ind'] = list(nest_dict.values())
+    nest_dict = {'sersic'                    : None,
+                'sersic+sersic'              : 'sersic',
+                'sersic,sersic'              : 'sersic+sersic',
+                'psf+sersic'                 : 'sersic',
+                'psf,sersic'                 : 'psf+sersic',
+                'psf,sersic+exp'             : 'exp+sersic+psf',
+                'psf,sersic+sersic(n1)'      : 'sersic+sersic(n1)+psf',
+                'exp+sersic+psf'             : 'psf+sersic',
+                'sersic+sersic(n1)+psf'      : 'psf+sersic',
+                'sersic+psf,psf'             : 'psf+sersic',
+                'sersic+psf,sersic+psf'      : 'sersic+psf,psf',
+                'sersic+sersic+sersic'       : 'sersic+sersic',
+                'sersic+psf,sersic'          : 'psf+sersic',
+                'sersic+sersic,sersic'       : 'sersic+sersic+sersic',
+                'sersic+sersic,sersic+sersic': 'sersic+sersic,sersic',
+                'bar+sersic'                 : 'sersic',
+                'bar,sersic'                 : 'bar+sersic'}
+    # if plotting an extra model
+    if args.addModel:
+        nest_dict = add_model(d_fit, nest_dict, args)
+    # get indices of the nests
+    df['nests ind'] = [np.where(df==modname)[0][0] if modname!= None else None for modname in list(nest_dict.values())]
     # check if model at index k fit equally well as model with index in "nests ind"
     df['del chi'] = None
     df['reject null'] = None
@@ -229,8 +237,9 @@ if __name__=="__main__":
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_plots", help="directory for fit results")
     parser.add_argument("--outFile", type=str, help="output file")
+    parser.add_argument("--addModel", action='store_true', help='flag if plotting an extra model')
+    parser.add_argument("--nestModelName", type=str, help='name of model nesting/nested by extra model')
     parser.add_argument("--plotIso", action='store_true')
-    parser.add_argument("--useAIC", action='store_true')
     parser.add_argument('--cmap', type=str, default="ch:s=-.3,r=.6")
     args = parser.parse_args()
     
@@ -262,16 +271,9 @@ if __name__=="__main__":
         savepath = os.path.expanduser(os.path.join(args.outDir,args.oname+".pdf"))
     pdf = PdfPages(savepath)
 
-    # get model names
+    # get model names and sort index from best to worst chi reduced
     model_names = list(d.keys())[:-2]
-    if args.useAIC:
-        sorted_ind = np.argsort([d[m].fit_result.aic for m in model_names])
-        fs_lab = "AIC"
-        fstat='aic'
-    else:
-        sorted_ind = np.argsort([d[m].fit_result.fitStatReduced for m in model_names])
-        fs_lab = "$\chi^2$"
-        fstat = 'fitStat'
+    sorted_ind = np.argsort([d[m].fit_result.fitStatReduced for m in model_names])
 
     # do chi2 diff test
     df_chi = test_chi_diff(d_fit)
