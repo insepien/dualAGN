@@ -261,8 +261,8 @@ if __name__=="__main__":
             xs[0] = args.X0
             ys[0] = args.Y0
         else:
-            xs[0] = args.midF
-            ys[0] = args.midF
+            xs[0] = midF
+            ys[0] = midF
             xs[1] = args.X1
             ys[1] = args.Y1
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
