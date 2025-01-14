@@ -34,6 +34,8 @@ if __name__ == "__main__":
     parser.add_argument("--cutSize", type=int, help="fits cutout size")
     parser.add_argument("--objectName", type=str, help="object name")
     parser.add_argument("--makeMulti", action= 'store_true')
+    parser.add_argument("--RA", type=float, help='cutout center RA')
+    parser.add_argument("--DEC", type=float, help='cutout center DEC')
     args = parser.parse_args()    
     # reading coordinates from catalog
     catalog = pd.read_csv('catalog.txt', names=['name', 'ra', 'dec'], delimiter='\s+')
@@ -55,9 +57,13 @@ if __name__ == "__main__":
             save_path = os.path.join(args.outDir,boxdirname,args.objectName+'_'+str(i)+'.fits') 
             download_image_save_cutout(exp_path, catalog['coords'].loc[args.objectName], (i,i), save_path)
     
-
+ 
     if args.cutSize:
         save_path = os.path.join(args.outDir,args.objectName+'_'+str(args.cutSize)+'.fits')
-        download_image_save_cutout(exp_path, catalog['coords'].loc[args.objectName], (args.cutSize, args.cutSize), save_path)
+        if args.RA:
+            coords = SkyCoord(ra=args.RA*u.deg, dec=args.DEC*u.deg)
+            download_image_save_cutout(exp_path, coords, (args.cutSize, args.cutSize), save_path)
+        else:
+            download_image_save_cutout(exp_path, catalog['coords'].loc[args.objectName], (args.cutSize, args.cutSize), save_path)
 
     print("Finished "+ args.objectName)
