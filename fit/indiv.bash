@@ -6,15 +6,15 @@ log_file="indiv_log.txt"
 # Clear the log file before running the script
 > "$log_file"
 
-objectName='J1402+1540'
+objectName='J0926+0724'
 
 python3 fit.py --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_SS/" \
 --inFile "${objectName}.fits" --oname "$objectName" \
 --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit" \
---PA 45 --ELL 0.1 --RE 3 \
+--PA 145 --ELL 0.3 --RE 3 \
 >> "$log_file" 2>&1
 
-python3 makePlotComps.py --oname "$objectName" --sma 20 \
+python3 makePlotComps.py --oname "$objectName" --sma 10 \
 --inDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit" \
 --outDir "/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit_comp" \
 >> "$log_file" 2>&1

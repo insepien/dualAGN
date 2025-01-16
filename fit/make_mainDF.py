@@ -11,7 +11,11 @@ from astropy.cosmology import WMAP9 as cosmo
 
 def check(df):
     """some checks of df"""
-    print("Chi best < chi compare: ", np.sum([df.loc[n,"chi_r"][0] < df.loc[n,"chi_r"][1] for n in range(len(df))]))
+    chi_check = [df.loc[n,"chi_r"][0] < df.loc[n,"chi_r"][1] for n in range(len(df))]
+    print(f"Chi best < chi compare: {np.sum(chi_check)}/{len(df)}")
+    if np.sum(chi_check) != len(df):
+        print("Error in objects:")
+        print(df.loc[np.where(np.array(chi_check)==False)[0][0], 'Obj Name'])
     [print(n, df.loc[n,"Obj Name"], df.loc [n, "chi_r"]) for n in np.random.randint(0,len(df),3) ];
 
 def save_pkl(args,df,filename):
@@ -23,7 +27,8 @@ if __name__ == "__main__":
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
     parser = ArgumentParser(description=("analysis of fit result script"),
                             formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--outDir", type=str, default="/home/insepien/research-data/", help="output directory")
+    parser.add_argument("--fitPath", type=str, default="/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit/", help="fit directory")
+    parser.add_argument("--outDir", type=str, default="/home/insepien/research-data/pop-result/", help="output directory")
     parser.add_argument("--save_main", action="store_true", help='use this flag to save all_result df')
     args = parser.parse_args()
 
@@ -40,48 +45,24 @@ if __name__ == "__main__":
     # fill in df by row
     for n in range(len(df)):
         oname = df.loc[n]['Obj Name']
-        # if being 1 of 2 extra weird object, use different file path
-        if df.loc[n, 'comp fit'] != "" and df.loc[n, 'Use massfit'] =="1":
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            compare_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+"_all.pkl")
-            fix = False
-        # if normal object, best model from mass fit
-        elif df.loc[n, 'comp fit'] == "" and df.loc[n, 'Use massfit'] =="1":
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            compare_path = best_path
-            fix = False
-        # for best model from nb
-        else:
-            best_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/final_fit_nb/"+oname+".pkl")
-            compare_path = os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n0to10/masked_fit/"+oname+".pkl")
-            fix = True
-
+        fit_path = os.path.expanduser(args.fitPath+oname+".pkl")
+        fix = False
         # open fit result files
-        with open(best_path,"rb") as f:
-            d_best = pickle.load(f)
-        with open(compare_path,"rb") as f:
-            d_compare = pickle.load(f)
-
-        # if using nb, fix format error in final_fit_nb pkl
-        if fix:
-            d_best['paramNames'] = [d_best['paramNames']]
+        with open(fit_path,"rb") as f:
+            d_fit = pickle.load(f)
 
         # find index of best model
-        if len(d_best['modelNames'])==1 and list(d_best['modelNames'].keys())[0].replace('\n',"") .replace('/n',"")== df.loc[n, "best model"]:
-            ind_best = 0
-        else: 
-            ind_best = list(d_best['modelNames'].keys()).index(df.loc[n]['best model'])
-    
+        ind_best = list(d_fit['modelNames'].keys()).index(df.loc[n]['best model'])
         # find index of compare model
-        ind_compare = list(d_compare['modelNames'].keys()).index(df.loc[n]['compare model'])
+        ind_compare = list(d_fit['modelNames'].keys()).index(df.loc[n]['compare model'])
 
         # add chi and chi_r values
-        df.at[n,'chi'] = [d['fitResults'][i].fitStat for d,i in zip([d_best,d_compare],[ind_best,ind_compare])]
-        df.at[n,'chi_r'] = [d['fitResults'][i].fitStatReduced for d,i in zip([d_best,d_compare],[ind_best,ind_compare])]
+        df.at[n,'chi'] = [d['fitResults'][i].fitStat for d,i in zip([d_fit,d_fit],[ind_best,ind_compare])]
+        df.at[n,'chi_r'] = [d['fitResults'][i].fitStatReduced for d,i in zip([d_fit,d_fit],[ind_best,ind_compare])]
         
         # add dictionary of param names-param values
-        df.at[n,'param_vals_best'] = dict(zip(d_best['paramNames'][ind_best],d_best['fitResults'][ind_best].params))
-        df.at[n,'param_vals_compare'] = dict(zip(d_compare['paramNames'][ind_compare],d_compare['fitResults'][ind_compare].params))
+        df.at[n,'param_vals_best'] = dict(zip(d_fit['paramNames'][ind_best],d_fit['fitResults'][ind_best].params))
+        df.at[n,'param_vals_compare'] = dict(zip(d_fit['paramNames'][ind_compare],d_fit['fitResults'][ind_compare].params))
     
     #check main df and save
     check(df)
