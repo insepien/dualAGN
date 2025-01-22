@@ -104,11 +104,12 @@ if __name__=="__main__":
     fit_results = d['fitResults']
     param_names = d['paramNames'] 
 
-    # make model functions    
+    # some image params   
     Imax = image.max()
     framelim = image.shape[0]
     midF=framelim//2
     
+    # make 1D profile for data
     isolist_data = make_data_isophotes(data=image,sma=args.sma,midFrame=midF,pa0=args.pa)
     data_to_save = {}
     for i in range(len(configs)):

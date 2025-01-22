@@ -5,11 +5,8 @@ import pyimfit
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import logging
 import glob
 from modelComponents import makeModelDict
-from photutils.aperture import EllipticalAperture
-from photutils.detection import find_peaks
 
 medium_font_size = 14 
 plt.rcParams['font.size'] = medium_font_size
@@ -20,18 +17,22 @@ plt.rcParams['ytick.labelsize'] = medium_font_size
 
 
 def find_highest_indices(arr):
-    """returns a tuple of ys, xs - indices of pixels with highest counts"""
+    """returns a tuple of ys, xs - indices of pixels with highest intensity counts"""
     flattened_arr = np.array(arr).flatten()
     max_indices = np.unravel_index(np.argsort(flattened_arr)[-2:], arr.shape)
     return max_indices
 
 
 def find_sky(image, objectName, args):
+    """find background sky level as the peak of intensity histogram"""
+    # plot intensity histograms
     fig,ax = plt.subplots(1,2,figsize=(10,4))
     ax[0].hist(image.flatten(),bins=np.arange(np.min(image),np.max(image)))
     bgr = ax[1].hist(image.flatten(),bins=np.arange(np.min(image),20))
+    # find bin of maximum number of pix and sky level
     max_ind = np.where(bgr[0]==np.max(bgr[0]))[0][0]
     sky = (bgr[1][max_ind]+bgr[1][max_ind+1])/2
+    # option to save the histogram
     if args.plotSkyHist:
         [ax[i].set_title(['Whole intensity range',"min to 20"][i]) for i in range(2)]
         [ax[i].set_xlabel('intensity') for i in range(2)]
@@ -133,6 +134,7 @@ def galaxy_model(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1, Xlim, Ylim, Xsslim, Yss
 
 
 def get_dofit_val(objectName):
+    """get image parameters for fitting"""
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+objectName+"*.mos.fits"))[0]
     expfile = glob.glob(os.path.expanduser("~/raw-data-agn/exp-fits-agn/*"+objectName+"*.exp.fits"))[0]
     with fits.open(mosfile) as hdul:
@@ -170,7 +172,6 @@ def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain):
     fitResults = []
     pnames= []
 
-    logging.basicConfig(filename='error.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
     # fit all models
     for modelName in tqdm(models, desc="Fitting models"):
         try:
@@ -183,7 +184,6 @@ def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain):
             pnames.append(pname)
         except Exception as e:
             error_message = f"An error occurred for {modelName}: {e}"
-            logging.error(error_message)
             print(error_message) 
             continue  
     return configs, modelIms, fitResults, pnames

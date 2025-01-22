@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-import pickle
 import matplotlib.pyplot as plt
 import glob
 from astropy.wcs import WCS
@@ -64,10 +63,8 @@ def pix_to_arcsec(imageFile):
     framelim = fits.getdata(imageFile).shape[0]
     ra1,dec1 = w.pixel_to_world_values(0,0)
     ra2,dec2 = w.pixel_to_world_values(framelim,framelim)
-    framelim_deg = angular_separation(ra1*u.degree,dec1*u.degree,ra2*u.degree,dec2*u.degree)
     # find pixel-arsec scale
-    framelim_arcsec = framelim_deg.to('arcsec')
-    arcsec_per_pix = framelim_arcsec/framelim
+    arcsec_per_pix = 0.16*u.arcsec
     return arcsec_per_pix, [ra1,dec1,ra2,dec2]
 
 
@@ -81,8 +78,10 @@ def plot_sep(df2, args):
     median_z = np.median(list(alpaka['Z']))
     pix_in_kpc = (arcsec_per_pix.to(u.rad).value*cosmo.angular_diameter_distance(median_z)).to(u.kpc)
 
-    plt.hist(sep_kpc, color='darkseagreen',edgecolor='k', bins=np.logspace(-1,1.5,10))
-    plt.axvline(x=pix_in_kpc.value,label=f"1 pixel={pix_in_kpc.value:.2f}",c='cornflowerblue')
+    plt.hist(sep_kpc, 
+             color='darkseagreen',edgecolor='k', bins=np.logspace(-1,1.5,10))
+    plt.axvline(x=pix_in_kpc.value,
+                label=f"1 pixel={pix_in_kpc.value:.2f}",c='cornflowerblue')
     plt.title("Figure 2: Separation of 2-core AGNs")
     plt.xlabel(" Separation (kpc)")
     plt.ylabel("Number of AGN")
@@ -161,7 +160,7 @@ def update_all_results():
     df_all['OIII_BOL'] = df_all['OIII_5007_LUM_DERRED']*800
 
     df_all['sersic index'] = None
-    # add sersic index, intensity, luminosity
+    # add sersic index
     for j in range(len(df_all)):
         param_names = list(df_all.loc[j,'param_vals_best'].keys())
         ns = [i for i in param_names if i[0]=="n"]
@@ -169,6 +168,7 @@ def update_all_results():
         df_all.at[j,"sersic index"] = sersic_index
     df_all.to_pickle("/home/insepien/research-data/pop-result/all_results_updated.pkl")
     return df_all
+
 
 def plot_dualFrac_lum(ax):
     # get df with bolo lum
