@@ -240,8 +240,8 @@ if __name__=="__main__":
     psf_fileName = "psf_"+args.oname+".pkl"
     psfPath = os.path.join(args.psfPath, psf_fileName)
     with open (os.path.expanduser(psfPath), "rb") as f:
-        d = pickle.load(f)
-    epsf = d['psf'].data
+        d_psf = pickle.load(f)
+    epsf = d_psf['psf'].data
     # get do fit params
     exptime, noise, sky_level,numcom,gain = get_dofit_val(args.oname)
     # find centers for initial guess

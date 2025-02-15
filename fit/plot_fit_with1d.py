@@ -102,6 +102,7 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     arcsec_per_pix, skycoords = pix_to_arcsec(imageFile,framelim)
     sma_arcsec = isolist_data.sma*arcsec_per_pix
     sma_kpc = (cosmo.angular_diameter_distance(z)*sma_arcsec.to('rad').value).to('kpc')
+    sma_15kpc_to_arcsec = (((15*u.kpc/cosmo.angular_diameter_distance(z)).to("").value)*u.rad).to('arcsec').value
     # calculate isophote areas
     semi_minor_arcsec = np.sqrt((1-isolist_data.eps**2)*sma_arcsec**2)
     areas = (np.pi*sma_arcsec*semi_minor_arcsec).value
@@ -109,18 +110,39 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     magZPT = hdu_exp.header['MAGZP']
     mu_data = [surface_brightness(i,areas,magZPT) for i in [isolist_data.intens,isolist_data.intens-isolist_data.int_err,isolist_data.intens+isolist_data.int_err]]
     mu_models = [[surface_brightness(i,areas,magZPT) for i in [isolist_comps[j].intens,isolist_comps[j].intens-isolist_comps[j].int_err,isolist_comps[j].intens+isolist_comps[j].int_err]] for j in range(len(isolist_comps))]
-    return (sma_arcsec, sma_kpc, mu_data, mu_models, skycoords)
+    # find difference in surface brightness
+    del_fluxes = [isolist_data.intens/isolist_comps[-1].intens,
+                  (isolist_data.intens-isolist_data.int_err)/(isolist_comps[-1].intens-isolist_comps[-1].int_err), 
+                  (isolist_data.intens+isolist_data.int_err)/(isolist_comps[-1].intens+isolist_comps[-1].int_err)]
+    del_mu = [-2.5*np.log10(i) for i in del_fluxes]
+    return (sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec)
     
 
-def plot_everything(pdf, image, model_, rp_params_, model_index, args):
+def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, rank, args):
     # getting 2D plot params
     m = model_.comp_im[-1]
     modelname = model_.model_name
     comp_names = model_.comp_name
+
+    # change name so bulge number doesn't repeat in 1d plot
+    bulge_count  = 0
+    psf_count = 0
+    better_comp_names = []
+    for k in range(len(comp_names)):
+        if "bulge" in comp_names[k]:
+            better_comp_names.append(f"sersic {bulge_count}")
+            bulge_count += 1
+        elif "psf" in comp_names[k]:
+            better_comp_names.append(f"psf {psf_count}")
+            psf_count += 1
+        else:
+            better_comp_names.append(comp_names[k])
+
+    comp_pos = model_.comp_pos
     fs = model_.fit_result.fitStat
     fsr = model_.fit_result.fitStatReduced
     # getting 1D plot params
-    sma_arcsec, sma_kpc, mu_data, mu_models, skycoords = rp_params_
+    sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec = rp_params_
     # choose colormap
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
@@ -131,7 +153,7 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, args):
         modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
-    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.05,wspace=0.05)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.1,wspace=0.05)
     ax1 = fig.add_subplot(gs[:, 0],xlabel='RA (deg)',ylabel='DEC (deg)') 
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
@@ -163,32 +185,43 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, args):
         midF = image.shape[0]//2
         ax[0].plot(midF,midF,
                    marker='x',color="k",lw=2,alpha=0.3)
+    # putting model positions on
+    [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
+               marker='x',markersize=5, color=["k","","w"][j],alpha=[0.2,"",0.2][j]) for i in range(len(comp_pos))] for j in (0,2)]
+    # putting 10kpc isophote on
+    sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
+    plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
+    ax[2].legend(loc='upper left', fontsize='x-small')
     # radial plot data
     ax[3].plot(sma_arcsec[1:], mu_data[0][1:],
                label="data", c="k")
     ax[3].fill_between(sma_arcsec[1:].value, mu_data[1][1:],
                        mu_data[2][1:], color="k", alpha=0.2)
     # radial plot components
+    # plot start from [1:] since first point is a single point, so area is ~ 0, so mu~inf
     [ax[3].plot(sma_arcsec[1:], mu_models[i][0][1:], 
-                label=comp_names[i], linestyle=ls[i], c=colors[i]) for i in range(len(comp_names)-1)]
+                label=better_comp_names[i], linestyle=ls[i], c=colors[i]) for i in range(len(comp_names)-1)]
     [ax[3].fill_between(sma_arcsec[1:].value, mu_models[i][1][1:], mu_models[i][2][1:],
                         color=colors[i], alpha=0.5) for i in range(len(comp_names)-1)]
-    ax[4].plot(sma_kpc[1:], mu_data[0][1:]-mu_models[-1][0][1:],
+    ax[4].plot(sma_kpc[1:], del_mu[0][1:],
                c='rebeccapurple', linestyle="dashdot")
-    ax[4].fill_between(sma_kpc[1:].value, mu_data[1][1:]-mu_models[-1][1][1:], mu_data[2][1:]-mu_models[-1][2][1:],
+    ax[4].fill_between(sma_kpc[1:].value, del_mu[1][1:], del_mu[2][1:],
                        color='rebeccapurple',alpha=0.5)
     ax[4].axhline(y=0,linestyle='--',c="k",alpha=0.5,lw=1)
     # format ticks
+    ax[3].set_ylim(ymax=30)
     ax[3].invert_yaxis()
     ax[3].set_xlabel("R[arcsec]")
     ax[3].set_ylabel("$\mu$ [mag arcsec$^{-2}$]")
+    ax[3].set_xscale('log')
     ax[3].xaxis.set_label_position('top') 
     ax[3].xaxis.set_ticks_position('top') 
     ax[3].legend(fontsize=10,loc='upper right')
     
     ax[4].set_xlabel("R[kpc]")
-    ax[4].set_ylabel("$\Delta \mu$") 
+    ax[4].set_ylabel("$\Delta$m") 
     ax[4].set_ylim((-0.5,0.5))
+    ax[4].set_xscale('log')
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
 
@@ -199,6 +232,12 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, args):
     fig.text(0.01, 0.99, 
              f"Compare model: {compare_ind}\nReject null: {rejectNull}\n $\Delta \chi^2$={delChi}", 
             verticalalignment='top', horizontalalignment='left')
+    
+    # add model rank by chi 2
+    fig.text(0.01, 0.01, 
+             f"Model rank: {rank:.0f}", 
+            verticalalignment='bottom', horizontalalignment='left')
+    
     pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 
 
@@ -221,11 +260,15 @@ def plot_model_components(pdf, model_, serinds, args):
                 f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", 
                 transform=ax[i].transAxes, fontsize=8, color='w') for i in range(ncom-1)]
     # add sersic indices if sersic
-    count_ind  = 0
+    bulge_count  = 0
+    psf_count = 0
     for k in range(ncom):
         if "bulge" in comp_names[k]:
-            axtit = f"{comp_names[k][:6]} {count_ind}, n={serinds[count_ind]:.2f}"
-            count_ind += 1
+            axtit = f"sersic {bulge_count}, n={serinds[bulge_count]:.2f}"
+            bulge_count += 1
+        elif "psf" in comp_names[k]:
+            axtit = f"psf {psf_count}"
+            psf_count += 1
         else:
             axtit = comp_names[k]
         ax[k].set_title(axtit)
@@ -254,6 +297,13 @@ def plot_isophotes(ax,isolist,num_aper=10):
                 color='white', linewidth="0.5", alpha=0.3)
         
 
+def plot_1isophote(ax,sma,isolist,label_):
+    """plot aperatures on image"""
+    iso = isolist.get_closest(sma)
+    x, y, = iso.sampled_coordinates()
+    ax.plot(x, y, color='white',linewidth="0.3",alpha=0.5,label=label_)
+        
+
 if __name__=="__main__":
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
     parser = ArgumentParser(description=(
@@ -267,6 +317,7 @@ if __name__=="__main__":
     parser.add_argument("--addModel", action='store_true', help='flag if plotting an extra model')
     parser.add_argument("--nestModelName", type=str, help='name of model nesting/nested by extra model')
     parser.add_argument("--plotIso", action='store_true', help="option to plot isophotes in component plots")
+    parser.add_argument("--sorted", action='store_true', help="option to sort model by best chi")
     parser.add_argument("--plot00", action='store_true')
     parser.add_argument('--cmap', type=str, default="ch:s=-.3,r=.6")
     args = parser.parse_args()
@@ -301,7 +352,8 @@ if __name__=="__main__":
 
     # get model names and sort index from best to worst chi reduced
     model_names = list(d.keys())[:-2]
-    sorted_ind = np.argsort([d[m].fit_result.fitStatReduced for m in model_names])
+    sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
+    sorted_model_num = [np.where(sorted_ind==i)[0][0] for i in range(len(sorted_ind))]
 
     # do chi2 diff test
     df_chi = test_chi_diff(d_fit)
@@ -310,12 +362,16 @@ if __name__=="__main__":
     redshift = np.mean(alpaka[alpaka['Desig']==args.oname]['Z'])
     
     with PdfPages(savepath) as pdf:
-        for model_ind in sorted_ind:
+        if args.sorted:
+            order = sorted_ind
+        else:
+            order = range(len(sorted_ind))
+        for model_ind,model_rank in zip (order,sorted_model_num):
             model = d[model_names[model_ind]]
             rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
                                             isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                             hdu_exp=hdu0,z=redshift)
             plot_everything(pdf, image=imageAGN, model_=model, rp_params_ = rp_params,
-                            model_index = model_ind, args=args)
+                            model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
             plot_model_components(pdf, model_=model, serinds=ns[model_ind], args=args)
     print("Done: ", args.oname)
