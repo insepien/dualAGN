@@ -14,17 +14,25 @@ import glob
 from astropy.wcs import WCS
 import pandas as pd
 from scipy.stats import chi2
+import matplotlib.colors as mcolors
+from astropy.coordinates import SkyCoord
 
+# medium_font_size = 14 
+# plt.rcParams['font.size'] = medium_font_size
+# plt.rcParams['axes.labelsize'] = medium_font_size
+# plt.rcParams['axes.titlesize'] = medium_font_size
+# plt.rcParams['xtick.labelsize'] = medium_font_size
+# plt.rcParams['ytick.labelsize'] = medium_font_size
+# plt.rcParams['mathtext.fontset'] = 'cm'
+# plt.rcParams['font.family'] = 'monospace'
 
-medium_font_size = 14 
-plt.rcParams['font.size'] = medium_font_size
-plt.rcParams['axes.labelsize'] = medium_font_size
-plt.rcParams['axes.titlesize'] = medium_font_size
-plt.rcParams['xtick.labelsize'] = medium_font_size
-plt.rcParams['ytick.labelsize'] = medium_font_size
-plt.rcParams['mathtext.fontset'] = 'cm'
-plt.rcParams['font.family'] = 'monospace'
-
+plt.rcParams["text.usetex"] = True
+sns.set_context("paper",font_scale=1.5)
+figparams = {'font.family': 'DejaVu Sans',
+        'font.serif':'Times',
+        'text.latex.preamble': [r'\usepackage{amsmath}'],
+        'text.usetex':True,
+            'hatch.linewidth' : 3.0}
 
 def cal_pval(df,i,j,sig_lev=0.05):
     """check if models fit equally well (null hypothesis)
@@ -130,10 +138,10 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     better_comp_names = []
     for k in range(len(comp_names)):
         if "bulge" in comp_names[k]:
-            better_comp_names.append(f"sersic {bulge_count}")
+            better_comp_names.append(rf"S\'ersic {bulge_count}")
             bulge_count += 1
         elif "psf" in comp_names[k]:
-            better_comp_names.append(f"psf {psf_count}")
+            better_comp_names.append(f"PSF {psf_count}")
             psf_count += 1
         else:
             better_comp_names.append(comp_names[k])
@@ -147,13 +155,10 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
     cmapp = sns.color_palette(args.cmap, as_cmap=True).reversed()
-    # formatting model name
-    if len(modelname) > 16 and ',' in modelname:
-        modelname.replace('\n','')
-        modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
+
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
-    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1.25,1.25,1,1.5],hspace=0.1,wspace=0.05)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1.25,1,1.5],hspace=0.1,wspace=0.05)
     ax1 = fig.add_subplot(gs[:, 0],xlabel='RA (deg)',ylabel='DEC (deg)') 
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
@@ -166,35 +171,26 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     ax1.set_yticks(np.linspace(0,image.shape[0],4))
     ax1.set_xticklabels([f'{x:.3f}' for x in xticks])
     ax1.set_yticklabels([f'{y:.3f}' for y in yticks],rotation=90)
-    ax1.tick_params(direction='in')
+    ax1.tick_params(direction='in',colors='white', labelcolor='black')
+
     # plot 2d and colorbars
     ax = [ax1,ax2,ax3,ax4a,ax4b]
+    # try to put colorbar for ax0 and ax1
+    vmin, vmax = min(image.min(), m.min()), max(image.max(), m.max())
+    sm = plt.cm.ScalarMappable(cmap=cmapp, norm=mcolors.Normalize(vmin=vmin, vmax=vmax))
+    sm.set_array([])
+
     im = [ax[i].imshow([image, m][i], 
-                       norm='symlog',cmap=cmapp) for i in range(2)]
+                       norm='symlog',cmap=cmapp,vmin=vmin, vmax=vmax) for i in range(2)]
     im2 = ax[2].imshow(image-m,
                        cmap=cmapp)
     fig.colorbar(im2,ax=ax[2],
                  orientation='horizontal',location='bottom',pad=0.05)
-    fig.colorbar(im[1],ax=[ax[0],ax[1]],
-                 orientation='vertical',location='right',shrink=0.5)
-    [ax[i].set_title([args.oname,
-                      f"Model {model_index}:\n{modelname}",
-                      f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
-    # option to put midframe point on 2D
-    if args.plot00:
-        midF = image.shape[0]//2
-        ax[0].plot(midF,midF,
-                   marker='x',color="k",lw=2,alpha=0.3)
-    # putting model positions on
-    [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
-               marker='x',markersize=5, color=["k","","w"][j],alpha=[0.2,"",0.2][j]) for i in range(len(comp_pos))] for j in (0,2)]
-    # putting 10kpc isophote on
-    sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
-    plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
-    ax[2].legend(loc='upper left', fontsize='x-small')
+    fig.colorbar(sm, ax=ax[1],
+                orientation='vertical',location='right',shrink=0.5)
     # radial plot data
     ax[3].plot(sma_arcsec[1:], mu_data[0][1:],
-               label="data", c="k")
+               label="Data", c="k")
     ax[3].fill_between(sma_arcsec[1:].value, mu_data[1][1:],
                        mu_data[2][1:], color="k", alpha=0.2)
     # radial plot components
@@ -218,6 +214,7 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     ax[3].xaxis.set_ticks_position('top') 
     ax[3].legend(fontsize=10,loc='upper right')
     
+    
     ax[4].set_xlabel("R[kpc]")
     ax[4].set_ylabel("$\Delta$m") 
     ax[4].set_ylim((-0.5,0.5))
@@ -225,20 +222,49 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
 
-    # add chi2 test stats
-    rejectNull = str(df_chi.loc[model_index,'reject null'])
-    delChi = df_chi.loc[model_index,"del chi"]
-    compare_ind = df_chi.loc[model_index, "nests ind"]
-    fig.text(0.01, 0.99, 
-             f"Compare model: {compare_ind}\nReject null: {rejectNull}\n $\Delta \chi^2$={delChi}", 
-            verticalalignment='top', horizontalalignment='left')
-    
-    # add model rank by chi 2
-    fig.text(0.01, 0.01, 
-             f"Model rank: {rank:.0f}", 
-            verticalalignment='bottom', horizontalalignment='left')
-    
-    pdf.savefig(bbox_inches='tight', pad_inches=0.2);
+    # paper or big plot
+    if args.paper:
+        prettyname = modelname.replace("sersic","Sérsic",modelname.count('sersic'))
+        prettyname = prettyname.replace("psf","PSF",modelname.count('psf'))
+        [ax[i].set_title([args.oname,
+                    f"Model:\n {prettyname}",
+                    'Residual'][i]) for i in range(3)]
+        fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
+    else:
+        # formatting model name
+        if len(modelname) > 16 and ',' in modelname:
+            modelname.replace('\n','')
+            modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
+        [ax[i].set_title([args.oname,
+                    f"Model {model_index}:\n{modelname}",
+                    f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
+        fig.colorbar(im[1],ax=[ax[0],ax[1]],
+                 orientation='vertical',location='right',shrink=0.5)
+        ax[2].legend(loc='upper left', fontsize='x-small')
+        # option to put midframe point on 2D
+        if args.plot00:
+            midF = image.shape[0]//2
+            ax[0].plot(midF,midF,
+                    marker='x',color="k",lw=2,alpha=0.3)
+        # putting model positions on
+        [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
+                marker='x',markersize=5, color=["k","","w"][j],alpha=[0.2,"",0.2][j]) for i in range(len(comp_pos))] for j in (0,2)]
+        # putting 10kpc isophote on
+        sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
+        plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
+        # add chi2 test stats
+        rejectNull = str(df_chi.loc[model_index,'reject null'])
+        delChi = df_chi.loc[model_index,"del chi"]
+        compare_ind = df_chi.loc[model_index, "nests ind"]
+        fig.text(0.01, 0.99, 
+                f"Compare model: {compare_ind}\nReject null: {rejectNull}\n $\Delta \chi^2$={delChi}", 
+                verticalalignment='top', horizontalalignment='left')
+        
+        # add model rank by chi 2
+        fig.text(0.01, 0.01, 
+                f"Model rank: {rank:.0f}", 
+                verticalalignment='bottom', horizontalalignment='left')
+        pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 
 
 def plot_model_components(pdf, model_, serinds, args):
@@ -314,12 +340,17 @@ if __name__=="__main__":
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_plots", help="directory for fit results")
     parser.add_argument("--outFile", type=str, help="output file")
+    # args to add a model to big pdf
     parser.add_argument("--addModel", action='store_true', help='flag if plotting an extra model')
     parser.add_argument("--nestModelName", type=str, help='name of model nesting/nested by extra model')
+    # args for everything plot
     parser.add_argument("--plotIso", action='store_true', help="option to plot isophotes in component plots")
     parser.add_argument("--sorted", action='store_true', help="option to sort model by best chi")
-    parser.add_argument("--plot00", action='store_true')
+    parser.add_argument("--plot00", action='store_true', help = 'flag for plot the frame center')
     parser.add_argument('--cmap', type=str, default="ch:s=-.3,r=.6")
+    # args for paper plot
+    parser.add_argument("--paper", action='store_true', help="flag to make plot for paper")
+    parser.add_argument("--modelName", type=str, help='model name for paper plot')
     args = parser.parse_args()
     
     # load fit file to get sersic index for component plots
@@ -343,13 +374,7 @@ if __name__=="__main__":
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     with fits.open(mosfile) as hdul:
         hdu0 = hdul[0]
-    # create output file
-    if args.outFile:
-        savepath = os.path.expanduser(os.path.join(args.outDir,args.outFile))
-    else:
-        savepath = os.path.expanduser(os.path.join(args.outDir,args.oname+".pdf"))
-    pdf = PdfPages(savepath)
-
+    
     # get model names and sort index from best to worst chi reduced
     model_names = list(d.keys())[:-2]
     sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
@@ -360,18 +385,36 @@ if __name__=="__main__":
     # find redshift
     alpaka = pd.read_pickle("/home/insepien/research-data/alpaka/alpaka_39fits.pkl")
     redshift = np.mean(alpaka[alpaka['Desig']==args.oname]['Z'])
-    
-    with PdfPages(savepath) as pdf:
-        if args.sorted:
-            order = sorted_ind
+
+    # choose paper plot or analysis plot
+    if args.paper:
+        model_ind = np.where(np.array(model_names)==args.modelName)[0][0]
+        print(model_ind)
+        model = d[model_names[model_ind]]
+        model_rank = ""
+        rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
+                                                isolist_data=isolist_agn,isolist_comps=model.iso_comp,
+                                                hdu_exp=hdu0,z=redshift)
+        plot_everything(pdf="", image=imageAGN, model_=model, rp_params_ = rp_params,
+                        model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
+    else:
+        # create output file
+        if args.outFile:
+            savepath = os.path.expanduser(os.path.join(args.outDir,args.outFile))
         else:
-            order = range(len(sorted_ind))
-        for model_ind,model_rank in zip (order,sorted_model_num):
-            model = d[model_names[model_ind]]
-            rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
-                                            isolist_data=isolist_agn,isolist_comps=model.iso_comp,
-                                            hdu_exp=hdu0,z=redshift)
-            plot_everything(pdf, image=imageAGN, model_=model, rp_params_ = rp_params,
-                            model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
-            plot_model_components(pdf, model_=model, serinds=ns[model_ind], args=args)
-    print("Done: ", args.oname)
+            savepath = os.path.expanduser(os.path.join(args.outDir,args.oname+".pdf"))
+        pdf = PdfPages(savepath)
+        with PdfPages(savepath) as pdf:
+            if args.sorted:
+                order = sorted_ind
+            else:
+                order = range(len(sorted_ind))
+            for model_ind,model_rank in zip (order,sorted_model_num):
+                model = d[model_names[model_ind]]
+                rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
+                                                isolist_data=isolist_agn,isolist_comps=model.iso_comp,
+                                                hdu_exp=hdu0,z=redshift)
+                plot_everything(pdf, image=imageAGN, model_=model, rp_params_ = rp_params,
+                                model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
+                plot_model_components(pdf, model_=model, serinds=ns[model_ind], args=args)
+        print("Done: ", args.oname)
