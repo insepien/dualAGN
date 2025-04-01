@@ -16,8 +16,9 @@ import pandas as pd
 from scipy.stats import chi2
 import matplotlib.colors as mcolors
 from astropy.coordinates import SkyCoord
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# medium_font_size = 14 
+# medium_font_size = 22
 # plt.rcParams['font.size'] = medium_font_size
 # plt.rcParams['axes.labelsize'] = medium_font_size
 # plt.rcParams['axes.titlesize'] = medium_font_size
@@ -27,7 +28,7 @@ from astropy.coordinates import SkyCoord
 # plt.rcParams['font.family'] = 'monospace'
 
 plt.rcParams["text.usetex"] = True
-sns.set_context("paper",font_scale=1.5)
+sns.set_context("paper",font_scale=1.75)
 figparams = {'font.family': 'DejaVu Sans',
         'font.serif':'Times',
         'text.latex.preamble': [r'\usepackage{amsmath}'],
@@ -158,7 +159,7 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
 
     # Create grid and add subplots
     fig = plt.figure(figsize=(14, 4),layout='tight')
-    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1.25,1,1.5],hspace=0.1,wspace=0.05)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5],hspace=0.1,wspace=0.05)
     ax1 = fig.add_subplot(gs[:, 0],xlabel='RA (deg)',ylabel='DEC (deg)') 
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
@@ -184,10 +185,25 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
                        norm='symlog',cmap=cmapp,vmin=vmin, vmax=vmax) for i in range(2)]
     im2 = ax[2].imshow(image-m,
                        cmap=cmapp)
-    fig.colorbar(im2,ax=ax[2],
-                 orientation='horizontal',location='bottom',pad=0.05)
-    fig.colorbar(sm, ax=ax[1],
-                orientation='vertical',location='right',shrink=0.5)
+
+    #################testing colorbars
+    div0 = make_axes_locatable(ax[0])
+    cax0 = div0.append_axes("bottom", size='5%', pad=0.1)
+    cax0.axis('off')
+
+    div1 = make_axes_locatable(ax[1])
+    cax1 = div1.append_axes("bottom", size='5%', pad=0.1)
+    cbr1 = plt.colorbar(sm,cax=cax1,orientation='horizontal')
+    cax1.xaxis.set_ticks_position("bottom")
+
+    div2 = make_axes_locatable(ax[2])
+    cax2 = div2.append_axes("bottom", size='5%', pad=0.1)
+    cbr2 = plt.colorbar(im2,cax=cax2,orientation='horizontal')
+    cax2.xaxis.set_ticks_position("bottom")
+    ###############################
+
+    #fig.colorbar(im2,ax=ax[2], orientation='horizontal',location='bottom',pad=0.05)
+    #fig.colorbar(sm, ax=ax[1], orientation='vertical',location='right',shrink=0.5)
     # radial plot data
     ax[3].plot(sma_arcsec[1:], mu_data[0][1:],
                label="Data", c="k")
@@ -212,7 +228,7 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     ax[3].set_xscale('log')
     ax[3].xaxis.set_label_position('top') 
     ax[3].xaxis.set_ticks_position('top') 
-    ax[3].legend(fontsize=10,loc='upper right')
+    ax[3].legend(fontsize=12,loc='upper right')
     
     
     ax[4].set_xlabel("R[kpc]")
@@ -224,10 +240,8 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
 
     # paper or big plot
     if args.paper:
-        prettyname = modelname.replace("sersic","Sérsic",modelname.count('sersic'))
-        prettyname = prettyname.replace("psf","PSF",modelname.count('psf'))
         [ax[i].set_title([args.oname,
-                    f"Model:\n {prettyname}",
+                    f"Model",
                     'Residual'][i]) for i in range(3)]
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
     else:
