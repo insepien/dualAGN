@@ -18,22 +18,14 @@ import matplotlib.colors as mcolors
 from astropy.coordinates import SkyCoord
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# medium_font_size = 22
-# plt.rcParams['font.size'] = medium_font_size
-# plt.rcParams['axes.labelsize'] = medium_font_size
-# plt.rcParams['axes.titlesize'] = medium_font_size
-# plt.rcParams['xtick.labelsize'] = medium_font_size
-# plt.rcParams['ytick.labelsize'] = medium_font_size
-# plt.rcParams['mathtext.fontset'] = 'cm'
-# plt.rcParams['font.family'] = 'monospace'
-
-plt.rcParams["text.usetex"] = True
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Times"],
+    "text.latex.preamble": r"\usepackage{amsmath}\usepackage{mathptmx}",  # Times Roman
+    "hatch.linewidth": 3.0,
+})
 sns.set_context("paper",font_scale=1.75)
-figparams = {'font.family': 'DejaVu Sans',
-        'font.serif':'Times',
-        'text.latex.preamble': [r'\usepackage{amsmath}'],
-        'text.usetex':True,
-            'hatch.linewidth' : 3.0}
 
 def cal_pval(df,i,j,sig_lev=0.05):
     """check if models fit equally well (null hypothesis)
@@ -127,13 +119,13 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
     return (sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec)
     
 
-def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, rank, args):
-    # getting 2D plot params
+def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, rank, z, args):
+    ########### setting up ##################
+    # get param names for 1d plot
     m = model_.comp_im[-1]
     modelname = model_.model_name
     comp_names = model_.comp_name
-
-    # change name so bulge number doesn't repeat in 1d plot
+    # change name numbering of components in 1D plot
     bulge_count  = 0
     psf_count = 0
     better_comp_names = []
@@ -146,90 +138,95 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
             psf_count += 1
         else:
             better_comp_names.append(comp_names[k])
-
+    # get position and fit stats
     comp_pos = model_.comp_pos
     fs = model_.fit_result.fitStat
     fsr = model_.fit_result.fitStatReduced
     # getting 1D plot params
     sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec = rp_params_
-    # choose colormap
+    # set up cmap and line styles for 1D plot
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
     cmapp = sns.color_palette(args.cmap, as_cmap=True).reversed()
-
-    # Create grid and add subplots
+    ############ plottting ##################
     fig = plt.figure(figsize=(14, 4),layout='tight')
     gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5],hspace=0.1,wspace=0.05)
-    ax1 = fig.add_subplot(gs[:, 0],xlabel='RA (deg)',ylabel='DEC (deg)') 
+    ax1 = fig.add_subplot(gs[:, 0],xlabel='x-position(pix)',ylabel='y-position(pix)') 
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
     ax4a = fig.add_subplot(gs[0, 3]) 
     ax4b = fig.add_subplot(gs[1, 3])   
     # formatting ticks as RA and DEC in degree
-    xticks = np.linspace(skycoords[0],skycoords[2],4)
-    yticks = np.linspace(skycoords[1],skycoords[3],4)
-    ax1.set_xticks(np.linspace(0,image.shape[0],4))
-    ax1.set_yticks(np.linspace(0,image.shape[0],4))
-    ax1.set_xticklabels([f'{x:.3f}' for x in xticks])
-    ax1.set_yticklabels([f'{y:.3f}' for y in yticks],rotation=90)
-    ax1.tick_params(direction='in',colors='white', labelcolor='black')
+    # xticks = np.linspace(skycoords[0],skycoords[2],4)
+    # yticks = np.linspace(skycoords[1],skycoords[3],4)
+    # ax1.set_xticks(np.linspace(0,image.shape[0],4))
+    # ax1.set_yticks(np.linspace(0,image.shape[0],4))
+    # ax1.set_xticklabels([f'{x:.3f}' for x in xticks])
+    # ax1.set_yticklabels([f'{y:.3f}' for y in yticks],rotation=90)
+    # ax1.tick_params(direction='in',colors='white', labelcolor='black')
 
-    # plot 2d and colorbars
+    ############ plot 2d
     ax = [ax1,ax2,ax3,ax4a,ax4b]
-    # try to put colorbar for ax0 and ax1
+    # set vmin,vmax so as to share colorbar later
     vmin, vmax = min(image.min(), m.min()), max(image.max(), m.max())
     sm = plt.cm.ScalarMappable(cmap=cmapp, norm=mcolors.Normalize(vmin=vmin, vmax=vmax))
     sm.set_array([])
-
     im = [ax[i].imshow([image, m][i], 
                        norm='symlog',cmap=cmapp,vmin=vmin, vmax=vmax) for i in range(2)]
     im2 = ax[2].imshow(image-m,
                        cmap=cmapp)
+     # putting model positions on
+    [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
+            marker='x',markersize=5, color=["k","k","w"][j],alpha=["",0.1,0.5][j]) for i in range(len(comp_pos))] for j in [1,2]]
+    # putting 1kpc line on
+    aslen = ((5*u.kpc/cosmo.angular_diameter_distance(z))*u.rad).to(u.arcsec).value
+    pix_len = aslen/0.16
+    start = image.shape[0] - pix_len-10
+    ax[0].plot([start,start+pix_len],[20,20],c='w')
+    ax[0].text(start-5,16,'5 kpc',fontsize=15,c='w')
 
-    #################testing colorbars
-    div0 = make_axes_locatable(ax[0])
-    cax0 = div0.append_axes("bottom", size='5%', pad=0.1)
-    cax0.axis('off')
+    # append colorbars outside frame
+    # data
+    div = [make_axes_locatable(ax[i]) for i in range(3)]
+    cax = [d.append_axes("bottom", size='5%', pad=0.1) for d in div]
+    cax[0].axis('off') # add colorbar so frames are aligned but turned off for data, since sharing colorbar with model
+    # model
+    cbr1 = plt.colorbar(sm,cax=cax[1],orientation='horizontal')
+    # residual
+    cbr2 = plt.colorbar(im2,cax=cax[2],orientation='horizontal')
+    # formatting colorbar ticks and label
+    [cax[i].xaxis.set_ticks_position("bottom") for i in [1,2]]
+    [cbr.set_label("Intensity(counts/pix)",fontsize=15) for cbr in [cbr1,cbr2]]
+    [cb.ax.tick_params(labelsize=13) for cb in[cbr1,cbr2]]
 
-    div1 = make_axes_locatable(ax[1])
-    cax1 = div1.append_axes("bottom", size='5%', pad=0.1)
-    cbr1 = plt.colorbar(sm,cax=cax1,orientation='horizontal')
-    cax1.xaxis.set_ticks_position("bottom")
-
-    div2 = make_axes_locatable(ax[2])
-    cax2 = div2.append_axes("bottom", size='5%', pad=0.1)
-    cbr2 = plt.colorbar(im2,cax=cax2,orientation='horizontal')
-    cax2.xaxis.set_ticks_position("bottom")
-    ###############################
-
-    #fig.colorbar(im2,ax=ax[2], orientation='horizontal',location='bottom',pad=0.05)
-    #fig.colorbar(sm, ax=ax[1], orientation='vertical',location='right',shrink=0.5)
-    # radial plot data
+    ############# plot 1d
+    # data
     ax[3].plot(sma_arcsec[1:], mu_data[0][1:],
                label="Data", c="k")
     ax[3].fill_between(sma_arcsec[1:].value, mu_data[1][1:],
                        mu_data[2][1:], color="k", alpha=0.2)
-    # radial plot components
+    # components
     # plot start from [1:] since first point is a single point, so area is ~ 0, so mu~inf
     [ax[3].plot(sma_arcsec[1:], mu_models[i][0][1:], 
                 label=better_comp_names[i], linestyle=ls[i], c=colors[i]) for i in range(len(comp_names)-1)]
     [ax[3].fill_between(sma_arcsec[1:].value, mu_models[i][1][1:], mu_models[i][2][1:],
                         color=colors[i], alpha=0.5) for i in range(len(comp_names)-1)]
+    # residual mag
     ax[4].plot(sma_kpc[1:], del_mu[0][1:],
                c='rebeccapurple', linestyle="dashdot")
     ax[4].fill_between(sma_kpc[1:].value, del_mu[1][1:], del_mu[2][1:],
                        color='rebeccapurple',alpha=0.5)
     ax[4].axhline(y=0,linestyle='--',c="k",alpha=0.5,lw=1)
-    # format ticks
+    # for surface brightness, reverse yaxis and show a smaller range
     ax[3].set_ylim(ymax=30)
     ax[3].invert_yaxis()
+    # formatting axis
     ax[3].set_xlabel("R[arcsec]")
     ax[3].set_ylabel("$\mu$ [mag arcsec$^{-2}$]")
     ax[3].set_xscale('log')
     ax[3].xaxis.set_label_position('top') 
     ax[3].xaxis.set_ticks_position('top') 
     ax[3].legend(fontsize=12,loc='upper right')
-    
     
     ax[4].set_xlabel("R[kpc]")
     ax[4].set_ylabel("$\Delta$m") 
@@ -239,12 +236,12 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
 
     # paper or big plot
-    if args.paper:
+    if args.paper: # no model name or chi val in frame title
         [ax[i].set_title([args.oname,
                     f"Model",
                     'Residual'][i]) for i in range(3)]
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
-    else:
+    else: # innclude model names, chi val, chi test info, 10kpc isophote, midframe point
         # formatting model name
         if len(modelname) > 16 and ',' in modelname:
             modelname.replace('\n','')
@@ -260,9 +257,6 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
             midF = image.shape[0]//2
             ax[0].plot(midF,midF,
                     marker='x',color="k",lw=2,alpha=0.3)
-        # putting model positions on
-        [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
-                marker='x',markersize=5, color=["k","","w"][j],alpha=[0.2,"",0.2][j]) for i in range(len(comp_pos))] for j in (0,2)]
         # putting 10kpc isophote on
         sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
         plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
@@ -410,7 +404,7 @@ if __name__=="__main__":
                                                 isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                                 hdu_exp=hdu0,z=redshift)
         plot_everything(pdf="", image=imageAGN, model_=model, rp_params_ = rp_params,
-                        model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
+                        model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, z=redshift, args=args)
     else:
         # create output file
         if args.outFile:
