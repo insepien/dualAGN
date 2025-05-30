@@ -18,14 +18,18 @@ import matplotlib.colors as mcolors
 from astropy.coordinates import SkyCoord
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+sns.set_context("paper",font_scale=1.75)
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
     "font.serif": ["Times"],
     "text.latex.preamble": r"\usepackage{amsmath}\usepackage{mathptmx}",  # Times Roman
-    "hatch.linewidth": 3.0,
+    "hatch.linewidth": 3.0,  
+    "xtick.labelsize": 13,      
+    "ytick.labelsize": 13,      
+    "legend.fontsize": 13,
+
 })
-sns.set_context("paper",font_scale=1.75)
 
 def cal_pval(df,i,j,sig_lev=0.05):
     """check if models fit equally well (null hypothesis)
@@ -79,17 +83,6 @@ def test_chi_diff(d_fit):
         cal_pval(df, k, df.loc[k,"nests ind"])
     return df
 
-
-def pix_to_arcsec(imageFile,framelim):
-    """convert pixel to arcsec"""
-    w = WCS(imageFile)
-    # convert pixel to degree
-    ra1,dec1 = w.pixel_to_world_values(0,0)
-    ra2,dec2 = w.pixel_to_world_values(framelim,framelim)
-    # plate scale from data fits files
-    arcsec_per_pix = 0.16*u.arcsec
-    return arcsec_per_pix, [ra1,dec1,ra2,dec2]
-
 def surface_brightness(intensity, area, magZPT):
     """calculate surface brightness. area must be in arcsec square
         following Eq. 35 in galfit manual 
@@ -97,10 +90,10 @@ def surface_brightness(intensity, area, magZPT):
     return -2.5*np.log10(intensity/area)+ magZPT
 
 
-def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z=0.2):
+def radial_plot_params(isolist_data,isolist_comps,hdu_exp,z=0.2):
     """calculate sma and surface brightness [mag/arcsec square] for 1d plot"""
     # convert pixel to arcsec and kpc
-    arcsec_per_pix, skycoords = pix_to_arcsec(imageFile,framelim)
+    arcsec_per_pix = 0.16*u.arcsec
     sma_arcsec = isolist_data.sma*arcsec_per_pix
     sma_kpc = (cosmo.angular_diameter_distance(z)*sma_arcsec.to('rad').value).to('kpc')
     sma_15kpc_to_arcsec = (((15*u.kpc/cosmo.angular_diameter_distance(z)).to("").value)*u.rad).to('arcsec').value
@@ -116,10 +109,10 @@ def radial_plot_params(imageFile, framelim, isolist_data,isolist_comps,hdu_exp,z
                   (isolist_data.intens-isolist_data.int_err)/(isolist_comps[-1].intens-isolist_comps[-1].int_err), 
                   (isolist_data.intens+isolist_data.int_err)/(isolist_comps[-1].intens+isolist_comps[-1].int_err)]
     del_mu = [-2.5*np.log10(i) for i in del_fluxes]
-    return (sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec)
+    return (sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, sma_15kpc_to_arcsec)
     
 
-def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, rank, z, args):
+def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_data, rank, z, args):
     ########### setting up ##################
     # get param names for 1d plot
     m = model_.comp_im[-1]
@@ -136,6 +129,8 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
         elif "psf" in comp_names[k]:
             better_comp_names.append(f"PSF {psf_count}")
             psf_count += 1
+        elif "disk" in comp_names[k]:
+            better_comp_names.append("Exp")
         else:
             better_comp_names.append(comp_names[k])
     # get position and fit stats
@@ -143,27 +138,23 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     fs = model_.fit_result.fitStat
     fsr = model_.fit_result.fitStatReduced
     # getting 1D plot params
-    sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, skycoords, sma_15kpc_to_arcsec = rp_params_
+    sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, sma_15kpc_to_arcsec = rp_params_
     # set up cmap and line styles for 1D plot
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
     cmapp = sns.color_palette(args.cmap, as_cmap=True).reversed()
     ############ plottting ##################
-    fig = plt.figure(figsize=(14, 4),layout='tight')
-    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5],hspace=0.1,wspace=0.05)
-    ax1 = fig.add_subplot(gs[:, 0],xlabel='x-position(pix)',ylabel='y-position(pix)') 
+    fig = plt.figure(figsize=(14, 4),dpi=300)
+    gs = gridspec.GridSpec(2, 4, height_ratios=[3, 1], width_ratios=[1,1,1,1.5],hspace=0.1,wspace=0.07)
+    ax1 = fig.add_subplot(gs[:, 0],projection=wcs) 
+    [ax1.coords[i].set_major_formatter("dd:mm:ss") for i in range(2)]
+    [ax1.coords[i].set_ticks_position(["b","l"][i]) for i in range(2)]
+    [ax1.coords[i].set_axislabel(["RA","DEC"][i]) for i in range(2)]
+    [ax1.coords[i].set_ticklabel(size=13) for i in range(2)]
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
     ax4a = fig.add_subplot(gs[0, 3]) 
     ax4b = fig.add_subplot(gs[1, 3])   
-    # formatting ticks as RA and DEC in degree
-    # xticks = np.linspace(skycoords[0],skycoords[2],4)
-    # yticks = np.linspace(skycoords[1],skycoords[3],4)
-    # ax1.set_xticks(np.linspace(0,image.shape[0],4))
-    # ax1.set_yticks(np.linspace(0,image.shape[0],4))
-    # ax1.set_xticklabels([f'{x:.3f}' for x in xticks])
-    # ax1.set_yticklabels([f'{y:.3f}' for y in yticks],rotation=90)
-    # ax1.tick_params(direction='in',colors='white', labelcolor='black')
 
     ############ plot 2d
     ax = [ax1,ax2,ax3,ax4a,ax4b]
@@ -171,20 +162,19 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     vmin, vmax = min(image.min(), m.min()), max(image.max(), m.max())
     sm = plt.cm.ScalarMappable(cmap=cmapp, norm=mcolors.Normalize(vmin=vmin, vmax=vmax))
     sm.set_array([])
-    im = [ax[i].imshow([image, m][i], 
+    im = [ax[i].imshow([image, m][i], origin='lower',
                        norm='symlog',cmap=cmapp,vmin=vmin, vmax=vmax) for i in range(2)]
-    im2 = ax[2].imshow(image-m,
+    im2 = ax[2].imshow(image-m, origin='lower',
                        cmap=cmapp)
-     # putting model positions on
+    # putting model positions on
     [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
             marker='x',markersize=5, color=["k","k","w"][j],alpha=["",0.1,0.5][j]) for i in range(len(comp_pos))] for j in [1,2]]
-    # putting 1kpc line on
+    # putting 5 kpc line on
     aslen = ((5*u.kpc/cosmo.angular_diameter_distance(z))*u.rad).to(u.arcsec).value
     pix_len = aslen/0.16
     start = image.shape[0] - pix_len-10
-    ax[0].plot([start,start+pix_len],[20,20],c='w')
-    ax[0].text(start-5,16,'5 kpc',fontsize=15,c='w')
-
+    ax[0].plot([start,start+pix_len],[start,start],c='w')
+    ax[0].text(start,start+5,'5 kpc',c='w',fontsize=13)
     # append colorbars outside frame
     # data
     div = [make_axes_locatable(ax[i]) for i in range(3)]
@@ -196,10 +186,29 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     cbr2 = plt.colorbar(im2,cax=cax[2],orientation='horizontal')
     # formatting colorbar ticks and label
     [cax[i].xaxis.set_ticks_position("bottom") for i in [1,2]]
-    [cbr.set_label("Intensity(counts/pix)",fontsize=15) for cbr in [cbr1,cbr2]]
+    [cbr.set_label("Intensity [counts/pix]",fontsize=13) for cbr in [cbr1,cbr2]]
     [cb.ax.tick_params(labelsize=13) for cb in[cbr1,cbr2]]
+    # add compass
+    # Add compass rose
+    center_x = image.shape[1] * 0.25
+    center_y = image.shape[0] * 0.1
+    arrow_length = 12 # in pix
+    # Calculate direction using WCS
+    world_center = wcs.pixel_to_world(center_x, center_y)
+    north = world_center.directional_offset_by(0 * u.deg, 0.16 * arrow_length * u.arcsec)
+    east = world_center.directional_offset_by(90 * u.deg, 0.16 * arrow_length * u.arcsec)
+    nx, ny = wcs.world_to_pixel(north)
+    ex, ey = wcs.world_to_pixel(east)
+    # Draw arrows
+    ax[0].annotate('', xy=(nx, ny), xytext=(center_x, center_y),
+                arrowprops=dict(facecolor='white',edgecolor="white", width=0.5, headwidth=5, headlength=4))
+    ax[0].text(nx, ny, 'N', color='white', fontsize=13, ha='center', va='bottom')
+    ax[0].annotate('', xy=(ex, ey), xytext=(center_x, center_y),
+                arrowprops=dict(facecolor='white',edgecolor="white", width=0.5, headwidth=5, headlength=4))
+    ax[0].text(ex-6, ey, 'E', color='white', fontsize=13, ha='left', va='center')
 
-    ############# plot 1d
+
+    ############# plot 1d with sma_kpc, then relabel top axis to arcsec
     # data
     ax[3].plot(sma_arcsec[1:], mu_data[0][1:],
                label="Data", c="k")
@@ -219,18 +228,20 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
     ax[4].axhline(y=0,linestyle='--',c="k",alpha=0.5,lw=1)
     # for surface brightness, reverse yaxis and show a smaller range
     ax[3].set_ylim(ymax=30)
+    ax[3].set_xlim((sma_arcsec[1].value,sma_15kpc_to_arcsec))
     ax[3].invert_yaxis()
     # formatting axis
-    ax[3].set_xlabel("R[arcsec]")
+    ax[3].set_xlabel("R [arcsec]")
     ax[3].set_ylabel("$\mu$ [mag arcsec$^{-2}$]")
     ax[3].set_xscale('log')
     ax[3].xaxis.set_label_position('top') 
     ax[3].xaxis.set_ticks_position('top') 
     ax[3].legend(fontsize=12,loc='upper right')
-    
-    ax[4].set_xlabel("R[kpc]")
+
+    ax[4].set_xlabel("R [kpc]")
     ax[4].set_ylabel("$\Delta$m") 
     ax[4].set_ylim((-0.5,0.5))
+    ax[4].set_xlim((sma_kpc[1].value,15))
     ax[4].set_xscale('log')
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
@@ -243,15 +254,13 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
     else: # innclude model names, chi val, chi test info, 10kpc isophote, midframe point
         # formatting model name
+        modelname = modelname.replace("sersic",rf"S\'ersic").replace("psf","PSF").replace("exp","Exponential").replace("n1","n=1")
         if len(modelname) > 16 and ',' in modelname:
             modelname.replace('\n','')
             modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
         [ax[i].set_title([args.oname,
                     f"Model {model_index}:\n{modelname}",
                     f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
-        fig.colorbar(im[1],ax=[ax[0],ax[1]],
-                 orientation='vertical',location='right',shrink=0.5)
-        ax[2].legend(loc='upper left', fontsize='x-small')
         # option to put midframe point on 2D
         if args.plot00:
             midF = image.shape[0]//2
@@ -260,6 +269,7 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
         # putting 10kpc isophote on
         sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
         plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
+        ax[2].legend(loc='upper left', fontsize='x-small')
         # add chi2 test stats
         rejectNull = str(df_chi.loc[model_index,'reject null'])
         delChi = df_chi.loc[model_index,"del chi"]
@@ -267,7 +277,6 @@ def plot_everything(pdf, image, model_, rp_params_, model_index, isolist_data, r
         fig.text(0.01, 0.99, 
                 f"Compare model: {compare_ind}\nReject null: {rejectNull}\n $\Delta \chi^2$={delChi}", 
                 verticalalignment='top', horizontalalignment='left')
-        
         # add model rank by chi 2
         fig.text(0.01, 0.01, 
                 f"Model rank: {rank:.0f}", 
@@ -293,23 +302,27 @@ def plot_model_components(pdf, model_, serinds, args):
     [ax[i].text(0.05, 0.05, 
                 f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", 
                 transform=ax[i].transAxes, fontsize=8, color='w') for i in range(ncom-1)]
-    # add sersic indices if sersic
+    # add sersic indices if sersic and pretty names
     bulge_count  = 0
     psf_count = 0
-    for k in range(ncom):
+    better_comp_names = []
+    for k in range(len(comp_names)):
         if "bulge" in comp_names[k]:
-            axtit = f"sersic {bulge_count}, n={serinds[bulge_count]:.2f}"
+            better_comp_names.append(rf"S\'ersic {bulge_count}, n={serinds[bulge_count]:.2f}")
             bulge_count += 1
         elif "psf" in comp_names[k]:
-            axtit = f"psf {psf_count}"
+            better_comp_names.append(f"PSF {psf_count}")
             psf_count += 1
+        elif "disk" in comp_names[k]:
+            better_comp_names.append("Exp")
         else:
-            axtit = comp_names[k]
-        ax[k].set_title(axtit)
+            better_comp_names.append(comp_names[k])
+
+    [ax[i].set_title(better_comp_names[i]) for i in range(len(comp_names))]
     # check if model-comps is 0
     im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],
                             norm='symlog', cmap=clmap))
-    ax[-1].set_title("model-comps")
+    ax[-1].set_title("Model$-$Components")
     # add colorbars
     [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
     # option to plot isophote contours 
@@ -375,10 +388,11 @@ if __name__=="__main__":
     compPath = os.path.expanduser(os.path.join(args.inDir, args.oname+"_comp.pkl"))
     with open (compPath, "rb") as f:
         d = pickle.load(f)
-    imageAGN = d['agn']
     isolist_agn= d['agn-iso']
-    # load stuffs for coordinate calculations
-    imageAGNFile = glob.glob(os.path.expanduser("~/research-data/agn-result/box/final_cut/"+args.oname+"*"))[0]
+    # load stuffs for coordinate calculations and import image
+    imageAGNFile = glob.glob(os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/"+args.oname+"*"))[0]
+    imageAGN, header = fits.getdata(imageAGNFile,header=True)
+    wcs = WCS(header)
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     with fits.open(mosfile) as hdul:
         hdu0 = hdul[0]
@@ -397,13 +411,11 @@ if __name__=="__main__":
     # choose paper plot or analysis plot
     if args.paper:
         model_ind = np.where(np.array(model_names)==args.modelName)[0][0]
-        print(model_ind)
         model = d[model_names[model_ind]]
         model_rank = ""
-        rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
-                                                isolist_data=isolist_agn,isolist_comps=model.iso_comp,
+        rp_params = radial_plot_params(isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                                 hdu_exp=hdu0,z=redshift)
-        plot_everything(pdf="", image=imageAGN, model_=model, rp_params_ = rp_params,
+        plot_everything(pdf="",wcs=wcs, image=imageAGN, model_=model, rp_params_ = rp_params,
                         model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, z=redshift, args=args)
     else:
         # create output file
@@ -419,10 +431,9 @@ if __name__=="__main__":
                 order = range(len(sorted_ind))
             for model_ind,model_rank in zip (order,sorted_model_num):
                 model = d[model_names[model_ind]]
-                rp_params = radial_plot_params(imageFile=imageAGNFile, framelim=imageAGN.shape[0],
-                                                isolist_data=isolist_agn,isolist_comps=model.iso_comp,
+                rp_params = radial_plot_params(isolist_data=isolist_agn,isolist_comps=model.iso_comp,
                                                 hdu_exp=hdu0,z=redshift)
-                plot_everything(pdf, image=imageAGN, model_=model, rp_params_ = rp_params,
-                                model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, args=args)
+                plot_everything(pdf, wcs=wcs, image=imageAGN, model_=model, rp_params_ = rp_params,
+                        model_index = model_ind, isolist_data=isolist_agn, rank=model_rank, z=redshift, args=args)
                 plot_model_components(pdf, model_=model, serinds=ns[model_ind], args=args)
-        print("Done: ", args.oname)
+    print("Done: ", args.oname)

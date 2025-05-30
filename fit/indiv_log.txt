@@ -1,5 +1,9 @@
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:105: RuntimeWarning: divide by zero encountered in divide
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: divide by zero encountered in divide
   return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:246: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
-  fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
-13
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: invalid value encountered in log10
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: divide by zero encountered in log10
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:111: RuntimeWarning: invalid value encountered in log10
+  del_mu = [-2.5*np.log10(i) for i in del_fluxes]
+Done:  J1215+1344
