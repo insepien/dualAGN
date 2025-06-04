@@ -349,6 +349,17 @@ def plot_1isophote(ax,sma,isolist,label_):
     iso = isolist.get_closest(sma)
     x, y, = iso.sampled_coordinates()
     ax.plot(x, y, color='white',linewidth="0.3",alpha=0.5,label=label_)
+
+
+def rewrite_image_fits_with_header(args):
+    data= fits.getdata("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_SS/"+args.oname+".fits")
+    data0, header = fits.getdata(glob.glob(os.path.expanduser("~/research-data/agn-result/box/final_cut/"+args.oname+"*"))[0],header=True)
+    if data.shape==data0.shape:
+        print(f"same size of {data.shape}, writing new file")
+        fits.writeto("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/"+args.oname+".fits",
+                    data=data, header = header.copy(),overwrite=True)
+    else:
+        print("images not same size. need to resize")
         
 
 if __name__=="__main__":
@@ -373,7 +384,7 @@ if __name__=="__main__":
     parser.add_argument("--paper", action='store_true', help="flag to make plot for paper")
     parser.add_argument("--modelName", type=str, help='model name for paper plot')
     args = parser.parse_args()
-    
+
     # load fit file to get sersic index for component plots
     fitPath = os.path.expanduser("~/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit/"+args.oname+".pkl")
     with open (fitPath, "rb") as f:
@@ -391,7 +402,12 @@ if __name__=="__main__":
     isolist_agn= d['agn-iso']
     # load stuffs for coordinate calculations and import image
     imageAGNFile = glob.glob(os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/"+args.oname+"*"))[0]
-    imageAGN, header = fits.getdata(imageAGNFile,header=True)
+    try:
+        imageAGN, header = fits.getdata(imageAGNFile,header=True)
+    except:
+        # rewrite image fits with header
+        rewrite_image_fits_with_header(args)
+        imageAGN, header = fits.getdata(imageAGNFile,header=True)
     wcs = WCS(header)
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     with fits.open(mosfile) as hdul:

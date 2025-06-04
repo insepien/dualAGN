@@ -111,8 +111,8 @@ def galaxy_funcdict(X0, Y0, X1, Y1, Xss0, Yss0, Xss1, Yss1,
         "sersic+psf,sersic": [funcset_dict_psfser0,funcset_dict_sersic1],
         "sersic+sersic,sersic":[funcset_dict_serser0, funcset_dict_sersic1],
         "sersic+sersic,sersic+sersic": [funcset_dict_serser0, funcset_dict_serser1],
-        "bar+sersic":[funcset_dict_barser],
-        "bar,sersic":[funcset_dict_bar0, funcset_dict_sersic1]
+        # "bar+sersic":[funcset_dict_barser],
+        # "bar,sersic":[funcset_dict_bar0, funcset_dict_sersic1]
     }
     return funcset
 
@@ -163,10 +163,12 @@ def dofit_no_oversp(modelName, dataImage, psf, readnoise, expT, skylevel, ncom, 
     return fitConfig, fitModelImage, fitResult, param_names
 
 
-def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain):
+def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain,crop=False):
     """fit all models in models
        return lists of model config, model images, fit results, and parameter names"""
     models = list(models.keys())
+    if crop:
+        models = models[10:12]
     configs = []
     modelIms = []
     fitResults = []

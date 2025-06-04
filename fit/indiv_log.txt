@@ -1,9 +1,5 @@
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: divide by zero encountered in divide
   return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: invalid value encountered in log10
-  return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:90: RuntimeWarning: divide by zero encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
-/home/insepien/dualAGN/fit/plot_fit_with1d.py:111: RuntimeWarning: invalid value encountered in log10
-  del_mu = [-2.5*np.log10(i) for i in del_fluxes]
-Done:  J1215+1344
+Done:  J1402+1540
