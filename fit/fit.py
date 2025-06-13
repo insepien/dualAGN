@@ -200,7 +200,10 @@ def save_data(image,models,configs,modelIms,fitResults,pnames,objectName):
     savedata['fitResults'] = fitResults
     savedata['paramNames'] = pnames
     filename = os.path.join(args.outDir, objectName+".pkl")
-    pickle.dump(savedata,open(os.path.expanduser(filename),"wb"))
+    try:
+        pickle.dump(savedata,open(os.path.expanduser(filename),"wb"))
+    except:
+        pickle.dump(savedata,open("./"+objectName+".pkl"),"wb")
     
 
 if __name__=="__main__":
@@ -209,7 +212,7 @@ if __name__=="__main__":
         """
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--inDir", type=str, default="~/research-data/agn-result/fit/final_fit_nb/", help="path to cut out directory")
+    parser.add_argument("--inDir", type=str, default="~/research-data/agn-result/fit/final_fit_nb/", help="path to cut out directory, cut out must be .fits")
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/research-data/agn-result/fit/final_fit", help="output directory") 
     # fit guess params
@@ -222,15 +225,16 @@ if __name__=="__main__":
     parser.add_argument("--Y1", type=float, help='guess 2nd y pos')
     # use this if loading .fits files
     parser.add_argument("--inFile", type=str, help="cutout file")
-    parser.add_argument("--original", action="store_true", default='use this flag if fitting original, not sky subtracted image')
+    parser.add_argument("--original", action="store_true", help='use this flag if fitting original, not sky subtracted image')
     parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
     parser.add_argument("--plotSkyHist", action="store_true")
+    parser.add_argument("--fit", action="store_true")
     args = parser.parse_args()
     
-    # load cutout file
-    if args.inFile:
+    # load cutout image
+    if args.inFile: # option to specify input file
         cutoutPath = os.path.expanduser(args.inDir+args.inFile)
-    else:
+    else: # else default to .pkl (usually used for refitting image from a fit.pkl file)
         cutoutPath = os.path.expanduser(args.inDir+args.oname+".pkl")
     if args.inFile and args.inFile[-4:] =="fits":
         imageAGN = fits.getdata(cutoutPath)
@@ -255,10 +259,12 @@ if __name__=="__main__":
     if args.original:
         sky = find_sky(imageAGN, args.oname, args)
         imageAGN_bs = imageAGN-sky
+        print("Subtracted background")
     else:
         imageAGN_bs = imageAGN
+        print("Did not subtract background")
     # make models
-    if args.X1:
+    if args.X1: # option to specify guess positions
         if args.X0:
             xs[0] = args.X0
             ys[0] = args.Y0
@@ -277,8 +283,8 @@ if __name__=="__main__":
                         Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
                         midf=midF, 
                         h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
-
     # fit and save results
-    configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
-    save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,args.oname)
+    if args.fit:
+        configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
+        save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,args.oname)
     print('Done: ', args.oname)

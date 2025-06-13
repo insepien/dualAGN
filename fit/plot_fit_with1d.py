@@ -68,9 +68,7 @@ def test_chi_diff(d_fit):
                 'sersic+sersic+sersic'       : 'sersic+sersic',
                 'sersic+psf,sersic'          : 'psf+sersic',
                 'sersic+sersic,sersic'       : 'sersic+sersic+sersic',
-                'sersic+sersic,sersic+sersic': 'sersic+sersic,sersic',
-                'bar+sersic'                 : 'sersic',
-                'bar,sersic'                 : 'bar+sersic'}
+                'sersic+sersic,sersic+sersic': 'sersic+sersic,sersic'}
     # if plotting an extra model
     if args.addModel:
         nest_dict = add_model(d_fit, nest_dict, args)
@@ -169,12 +167,6 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     # putting model positions on
     [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
             marker='x',markersize=5, color=["k","k","w"][j],alpha=["",0.1,0.5][j]) for i in range(len(comp_pos))] for j in [1,2]]
-    # putting 5 kpc line on
-    aslen = ((5*u.kpc/cosmo.angular_diameter_distance(z))*u.rad).to(u.arcsec).value
-    pix_len = aslen/0.16
-    start = image.shape[0] - pix_len-10
-    ax[0].plot([start,start+pix_len],[start,start],c='w')
-    ax[0].text(start,start+5,'5 kpc',c='w',fontsize=13)
     # append colorbars outside frame
     # data
     div = [make_axes_locatable(ax[i]) for i in range(3)]
@@ -186,7 +178,6 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     cbr2 = plt.colorbar(im2,cax=cax[2],orientation='horizontal')
     # formatting colorbar ticks and label
     [cax[i].xaxis.set_ticks_position("bottom") for i in [1,2]]
-    [cbr.set_label("Intensity [counts/pix]",fontsize=13) for cbr in [cbr1,cbr2]]
     [cb.ax.tick_params(labelsize=13) for cb in[cbr1,cbr2]]
     # add compass
     # Add compass rose
@@ -232,7 +223,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     ax[3].invert_yaxis()
     # formatting axis
     ax[3].set_xlabel("R [arcsec]")
-    ax[3].set_ylabel("$\mu$ [mag arcsec$^{-2}$]")
+    ax[3].set_ylabel("$\mu$ [mag~arcsec$^{-2}$]")
     ax[3].set_xscale('log')
     ax[3].xaxis.set_label_position('top') 
     ax[3].xaxis.set_ticks_position('top') 
@@ -251,6 +242,14 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
         [ax[i].set_title([args.oname,
                     f"Model",
                     'Residual'][i]) for i in range(3)]
+        # 2d colorbar
+        [cbr.set_label("Intensity [counts/pix]",fontsize=13) for cbr in [cbr1,cbr2]]
+        # putting 5 kpc line on
+        aslen = ((5*u.kpc/cosmo.angular_diameter_distance(z))*u.rad).to(u.arcsec).value
+        pix_len = aslen/0.16
+        start = image.shape[0]*0.9 - pix_len-10
+        ax[0].plot([start,start+pix_len],[start,start],c='w')
+        ax[0].text(start,start+5,'5 kpc',c='w',fontsize=13)
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
     else: # innclude model names, chi val, chi test info, 10kpc isophote, midframe point
         # formatting model name
@@ -261,6 +260,9 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
         [ax[i].set_title([args.oname,
                     f"Model {model_index}:\n{modelname}",
                     f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
+        # format 2d colorbar
+        cbr1.set_label("Intensity [counts/pix]\n(for data and model)",fontsize=13)
+        cbr2.set_label("Intensity [counts/pix]",fontsize=13)
         # option to put midframe point on 2D
         if args.plot00:
             midF = image.shape[0]//2
@@ -268,8 +270,8 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
                     marker='x',color="k",lw=2,alpha=0.3)
         # putting 10kpc isophote on
         sma5_pix = sma_15kpc_to_arcsec/0.16 #plate scale of 0.16 arcsec/pix
-        plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15kpc")
-        ax[2].legend(loc='upper left', fontsize='x-small')
+        plot_1isophote(ax=ax[2],sma=sma5_pix,isolist=isolist_data,label_="15 kpc")
+        ax[2].legend(loc='upper left', fontsize='x-small', edgecolor="k", facecolor='k', framealpha=0.2, labelcolor="linecolor")
         # add chi2 test stats
         rejectNull = str(df_chi.loc[model_index,'reject null'])
         delChi = df_chi.loc[model_index,"del chi"]
@@ -295,13 +297,14 @@ def plot_model_components(pdf, model_, serinds, args):
     clmap = sns.color_palette(args.cmap, as_cmap=True).reversed()
     ncom = len(comp_names)
 
-    fig,ax = plt.subplots(nrows=1,ncols=ncom+1, figsize=(ncom*4,3))
+    fig,ax = plt.subplots(nrows=1,ncols=6, figsize=(14,3))
+    [ax[i].axis('off') for i in range(ncom+1,6)]
     im = [ax[i].imshow(comp_ims[i],
                        norm='symlog', cmap=clmap) for i in range(ncom)]
     # add positions
-    [ax[i].text(0.05, 0.05, 
-                f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", 
-                transform=ax[i].transAxes, fontsize=8, color='w') for i in range(ncom-1)]
+    # [ax[i].text(0.05, 0.05, 
+    #             f"(x,y)=({comp_pos[i][0]:.1f},{comp_pos[i][1]:.1f})", 
+    #             transform=ax[i].transAxes, fontsize=13, color='w') for i in range(ncom-1)]
     # add sersic indices if sersic and pretty names
     bulge_count  = 0
     psf_count = 0
@@ -316,21 +319,31 @@ def plot_model_components(pdf, model_, serinds, args):
         elif "disk" in comp_names[k]:
             better_comp_names.append("Exp")
         else:
-            better_comp_names.append(comp_names[k])
+            better_comp_names.append(comp_names[k].capitalize())
 
     [ax[i].set_title(better_comp_names[i]) for i in range(len(comp_names))]
     # check if model-comps is 0
-    im.append(ax[-1].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],
+    im.append(ax[ncom].imshow(np.sum(comp_ims[:-1],axis=0)-comp_ims[-1],
                             norm='symlog', cmap=clmap))
-    ax[-1].set_title("Model$-$Components")
+    ax[ncom].set_title("Model$-$Components")
     # add colorbars
-    [fig.colorbar(im[i], ax=ax[i], shrink=0.5).ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(len(ax))]
+    div = [make_axes_locatable(ax[i]) for i in range(ncom+1)]
+    cax = [d.append_axes("bottom", size='5%', pad=0.1) for d in div]
+    cbr = [plt.colorbar(im[i],cax=cax[i],orientation='horizontal') for i in range(len(cax))]
+    # formatting colorbar ticks and label
+    [cax[i].xaxis.set_ticks_position("bottom") for i in range(len(cax))]
+    [cb.ax.tick_params(labelsize=13) for cb in cbr]
+    [cb.ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f')) for cb in cbr[:-1]]
+    cbr[-1].ax.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
+    [a.xaxis.tick_top() for a in ax]
+    [a.tick_params(axis='x', bottom=False) for a in ax]
+    #[fig.colorbar(im[i], ax=ax[i], shrink=0.5, loc='bottom').ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f')) for i in range(ncom+1)]
     # option to plot isophote contours 
     if args.plotIso:
         for i in range(len(isolist_comps)):
             plot_isophotes(ax[i], isolist_comps[i], num_aper=5)
     fig.tight_layout()
-    pdf.savefig();
+    pdf.savefig(bbox_inches='tight', pad_inches=0.2);
 
 
 def plot_isophotes(ax,isolist,num_aper=10):
@@ -351,24 +364,15 @@ def plot_1isophote(ax,sma,isolist,label_):
     ax.plot(x, y, color='white',linewidth="0.3",alpha=0.5,label=label_)
 
 
-def rewrite_image_fits_with_header(args):
-    data= fits.getdata("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_SS/"+args.oname+".fits")
-    data0, header = fits.getdata(glob.glob(os.path.expanduser("~/research-data/agn-result/box/final_cut/"+args.oname+"*"))[0],header=True)
-    if data.shape==data0.shape:
-        print(f"same size of {data.shape}, writing new file")
-        fits.writeto("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/"+args.oname+".fits",
-                    data=data, header = header.copy(),overwrite=True)
-    else:
-        print("images not same size. need to resize")
-        
-
 if __name__=="__main__":
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
     parser = ArgumentParser(description=(
         """
         script to plot fit results
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--inDir", type=str, default="~/agn-result/fit/final_comps", help="input directory of fit result files")
+    parser.add_argument("--fitsDir", type=str, default="/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/", help=".fits directory of AGN images")
+    parser.add_argument("--fitDir", type=str, default="/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit15/", help="fit directory of fit.pkl")
+    parser.add_argument("--compDir", type=str, default="~/agn-result/fit/final_comps", help="input directory of fit result files")
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/agn-result/fit/final_plots", help="directory for fit results")
     parser.add_argument("--outFile", type=str, help="output file")
@@ -384,9 +388,8 @@ if __name__=="__main__":
     parser.add_argument("--paper", action='store_true', help="flag to make plot for paper")
     parser.add_argument("--modelName", type=str, help='model name for paper plot')
     args = parser.parse_args()
-
     # load fit file to get sersic index for component plots
-    fitPath = os.path.expanduser("~/research-data/agn-result/fit/fit_masked_n.3to6/masked_fit/"+args.oname+".pkl")
+    fitPath = os.path.expanduser(args.fitDir + args.oname + ".pkl")
     with open (fitPath, "rb") as f:
         d_fit = pickle.load(f)
     param_vals = [d_fit['fitResults'][i].params for i in range(len(d_fit['fitResults']))]
@@ -396,18 +399,13 @@ if __name__=="__main__":
         dic = dict(zip(param_names[i],param_vals[i]))
         ns.append([dic[i] for i in dic if i[0]=="n"])
     # load fit component file
-    compPath = os.path.expanduser(os.path.join(args.inDir, args.oname+"_comp.pkl"))
+    compPath = os.path.expanduser(os.path.join(args.compDir, args.oname + "_comp.pkl"))
     with open (compPath, "rb") as f:
         d = pickle.load(f)
     isolist_agn= d['agn-iso']
     # load stuffs for coordinate calculations and import image
-    imageAGNFile = glob.glob(os.path.expanduser("/home/insepien/research-data/agn-result/fit/fit_masked_n.3to6/masked_image_with_header/"+args.oname+"*"))[0]
-    try:
-        imageAGN, header = fits.getdata(imageAGNFile,header=True)
-    except:
-        # rewrite image fits with header
-        rewrite_image_fits_with_header(args)
-        imageAGN, header = fits.getdata(imageAGNFile,header=True)
+    imageAGNFile = glob.glob(os.path.expanduser(args.fitsDir + args.oname + "*"))[0]
+    imageAGN, header = fits.getdata(imageAGNFile,header=True)
     wcs = WCS(header)
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     with fits.open(mosfile) as hdul:
