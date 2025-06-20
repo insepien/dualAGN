@@ -128,7 +128,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
             better_comp_names.append(f"PSF {psf_count}")
             psf_count += 1
         elif "disk" in comp_names[k]:
-            better_comp_names.append("Exp")
+            better_comp_names.append("Exp ")
         else:
             better_comp_names.append(comp_names[k])
     # get position and fit stats
@@ -247,7 +247,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
         # putting 5 kpc line on
         aslen = ((5*u.kpc/cosmo.angular_diameter_distance(z))*u.rad).to(u.arcsec).value
         pix_len = aslen/0.16
-        start = image.shape[0]*0.9 - pix_len-10
+        start = image.shape[0]*0.9 - pix_len
         ax[0].plot([start,start+pix_len],[start,start],c='w')
         ax[0].text(start,start+5,'5 kpc',c='w',fontsize=13)
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
@@ -404,7 +404,7 @@ if __name__=="__main__":
         d = pickle.load(f)
     isolist_agn= d['agn-iso']
     # load stuffs for coordinate calculations and import image
-    imageAGNFile = glob.glob(os.path.expanduser(args.fitsDir + args.oname + "*"))[0]
+    imageAGNFile = glob.glob(os.path.expanduser(args.fitsDir + args.oname + "*.fits"))[0]
     imageAGN, header = fits.getdata(imageAGNFile,header=True)
     wcs = WCS(header)
     mosfile = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]

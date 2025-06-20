@@ -175,7 +175,7 @@ def fit_multi(models, epsf, image,noise,exptime,skylev,numcom,gain,crop=False):
     pnames= []
 
     # fit all models
-    for modelName in tqdm(models, desc="Fitting models"):
+    for modelName in tqdm(models, desc="Fitting Models"):
         try:
             config, modelIm, fitRes, pname = dofit_no_oversp(modelName, dataImage=image, psf=epsf, 
                                                              readnoise=noise, expT=exptime, skylevel = skylev, 
@@ -284,6 +284,7 @@ if __name__=="__main__":
                         midf=midF, 
                         h1=10,h2=10,h_lim=[0.1,10000],alpha=0.1,alpha_lim=[0.1,framelim])
     # fit and save results
+    print(imageAGN_bs.shape)
     if args.fit:
         configs, modelIms, fitResults, pnames = fit_multi(models_n1, epsf, imageAGN_bs,noise,exptime, sky_level,numcom,gain)
         save_data(imageAGN_bs,models_n1,configs,modelIms,fitResults,pnames,args.oname)
