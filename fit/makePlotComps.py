@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pickle
 import os
 import pyimfit
@@ -109,8 +110,12 @@ if __name__=="__main__":
     framelim = image.shape[0]
     midF=framelim//2
     
+    # read guess sma
+    guess = pd.read_csv("~/research-data/agn-result/fit/guess.csv")
+    gmask = guess['Name'] == args.oname
+    sma = guess[gmask].values[0][1:].astype(float)[-1]
     # make 1D profile for data
-    isolist_data = make_data_isophotes(data=image,sma=args.sma,midFrame=midF,pa0=args.pa)
+    isolist_data = make_data_isophotes(data=image,sma=sma,midFrame=midF,pa0=args.pa)
     data_to_save = {}
     for i in range(len(configs)):
         comp_ims, comp_pos, comp_names = make_model_components(configs[i],imshape=image.shape[0])

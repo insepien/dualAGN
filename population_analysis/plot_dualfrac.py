@@ -122,6 +122,9 @@ if __name__=="__main__":
     ax[1].tick_params(axis='y', labelright=True, labelleft=False)
     [ax[i].set_xlabel("Redshift") for i in range(2)]
     [ax[i].legend(loc='lower left',fontsize=10) for i in range(2)]
+
+    [ax[i].text(0.025, 0.975, ["Observed","Simulated"][i], transform=ax[i].transAxes, ha='left', va='top',fontsize=22) for i in range(2)]
+
     fig.tight_layout()
     fig.savefig(args.inDir+args.outFile)
     print("Done saving figure")

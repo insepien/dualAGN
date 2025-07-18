@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import glob
 from modelComponents import makeModelDict
+import pandas as pd
 
 medium_font_size = 14 
 plt.rcParams['font.size'] = medium_font_size
@@ -143,7 +144,7 @@ def get_dofit_val(objectName):
     with fits.open(expfile) as hdul:
         hdu = hdul[0]
     gain = hdu.header['EGAIN'] #[e-/DU] in header
-    exptime= hdu.header['EXPOSURE'] # actual exp time
+    exptime= hdu.header['EXPORG'] # actual exp time
     noise = hdu.header['EFFRN'] #[e-] in header
     numcom = hdu.header['NCOADD'] #Number of Averaged Frames   
     return exptime, noise, sky_level,numcom,gain
@@ -216,13 +217,13 @@ if __name__=="__main__":
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/research-data/agn-result/fit/final_fit", help="output directory") 
     # fit guess params
-    parser.add_argument("--PA", type=float, default=200., help='guess position angle')
-    parser.add_argument("--ELL", type=float, default=200., help='guess ellipticity')
-    parser.add_argument("--RE", type=float, default=200., help='guess effective radius')
-    parser.add_argument("--X0", type=float, help='guess 1st x pos')
-    parser.add_argument("--Y0", type=float, help='guess 1st y pos')
-    parser.add_argument("--X1", type=float, help='guess 2nd x pos')
-    parser.add_argument("--Y1", type=float, help='guess 2nd y pos')
+    # parser.add_argument("--PA", type=float, default=200., help='guess position angle')
+    # parser.add_argument("--ELL", type=float, default=200., help='guess ellipticity')
+    # parser.add_argument("--RE", type=float, default=200., help='guess effective radius')
+    # parser.add_argument("--X0", type=float, help='guess 1st x pos')
+    # parser.add_argument("--Y0", type=float, help='guess 1st y pos')
+    # parser.add_argument("--X1", type=float, help='guess 2nd x pos')
+    # parser.add_argument("--Y1", type=float, help='guess 2nd y pos')
     # use this if loading .fits files
     parser.add_argument("--inFile", type=str, help="cutout file")
     parser.add_argument("--original", action="store_true", help='use this flag if fitting original, not sky subtracted image')
@@ -263,22 +264,27 @@ if __name__=="__main__":
     else:
         imageAGN_bs = imageAGN
         print("Did not subtract background")
-    # make models
-    if args.X1: # option to specify guess positions
-        if args.X0:
-            xs[0] = args.X0
-            ys[0] = args.Y0
+    # read initial guesses
+    guess = pd.read_csv("~/research-data/agn-result/fit/guess.csv")
+    gmask = guess['Name'] == args.oname
+    PA,ell,RE,X0,Y0,X1,Y1,_= guess[gmask].values[0][1:].astype(float)
+    if np.isfinite(X1):
+        if np.isfinite(X0):
+            xs[0] = X0
+            ys[0] = Y0
         else:
             xs[0] = midF
             ys[0] = midF
-            xs[1] = args.X1
-            ys[1] = args.Y1
+        xs[1] = X1
+        ys[1] = Y1  
+    print(PA,ell,RE,xs[0],ys[0],xs[1],ys[1])
+    # make models
     models_n1 = galaxy_model(X0=xs[0], Y0=ys[0], 
                         X1=xs[1], Y1=ys[1], 
                         Xss0=xs[0], Yss0=ys[0], 
                         Xss1=xs[1], Yss1=ys[1],
                         Xlim=[0,framelim], Ylim=[0,framelim], Xsslim = [0,framelim], Ysslim=[0,framelim],
-                        PA_ss=args.PA, ell_ss=args.ELL, n_ss=1, I_ss=1, r_ss=args.RE, Itot=1500,
+                        PA_ss=PA, ell_ss=ell, n_ss=1, I_ss=1, r_ss=RE, Itot=1500,
                         PA_lim=[0,360], ell_lim=[0.0,1.0],
                         Iss_lim=[0.1,Imax], rss_lim=[0.1,framelim], Itot_lim=[0.1,1e4],
                         midf=midF, 
