@@ -136,7 +136,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     fs = model_.fit_result.fitStat
     fsr = model_.fit_result.fitStatReduced
     # getting 1D plot params
-    sma_arcsec, sma_kpc, mu_data, mu_models, del_mu, sma_15kpc_to_arcsec = rp_params_
+    sma_arcsec, sma_kpc, mu_data, mu_models0, del_mu, sma_15kpc_to_arcsec = rp_params_
     # set up cmap and line styles for 1D plot
     colors = sns.color_palette("colorblind", len(comp_names))
     ls = ['-', '--', '-.', ':']
@@ -206,11 +206,17 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     ax[3].fill_between(sma_arcsec[1:].value, mu_data[1][1:],
                        mu_data[2][1:], color="k", alpha=0.2)
     # components
+    # remove flat sky from plot list
+    keepind = [i for i in range(len(better_comp_names)) if better_comp_names[i]!= "flat_sky"]
+    dropsky = lambda x: [x[i] for i in keepind]
+    mu_models = dropsky(mu_models0)
+    better_comp_names = dropsky(better_comp_names)
     # plot start from [1:] since first point is a single point, so area is ~ 0, so mu~inf
-    [ax[3].plot(sma_arcsec[1:], mu_models[i][0][1:], 
-                label=better_comp_names[i], linestyle=ls[i], c=colors[i]) for i in range(len(comp_names)-1)]
-    [ax[3].fill_between(sma_arcsec[1:].value, mu_models[i][1][1:], mu_models[i][2][1:],
-                        color=colors[i], alpha=0.5) for i in range(len(comp_names)-1)]
+    for i in range(len(better_comp_names)-1):
+        ax[3].plot(sma_arcsec[1:], mu_models[i][0][1:], 
+            label=better_comp_names[i], linestyle=ls[i], c=colors[i])
+        ax[3].fill_between(sma_arcsec[1:].value, mu_models[i][1][1:], mu_models[i][2][1:],
+                    color=colors[i], alpha=0.5)
     # residual mag
     ax[4].plot(sma_kpc[1:], del_mu[0][1:],
                c='rebeccapurple', linestyle="dashdot")
@@ -297,8 +303,8 @@ def plot_model_components(pdf, model_, serinds, args):
     clmap = sns.color_palette(args.cmap, as_cmap=True).reversed()
     ncom = len(comp_names)
 
-    fig,ax = plt.subplots(nrows=1,ncols=6, figsize=(14,3))
-    [ax[i].axis('off') for i in range(ncom+1,6)]
+    fig,ax = plt.subplots(nrows=1,ncols=7, figsize=(14,3))
+    [ax[i].axis('off') for i in range(ncom+1,7)]
     im = [ax[i].imshow(comp_ims[i],
                        norm='symlog', cmap=clmap) for i in range(ncom)]
     # add positions
@@ -419,7 +425,7 @@ if __name__=="__main__":
     # do chi2 diff test
     df_chi = test_chi_diff(d_fit)
     # find redshift
-    alpaka = pd.read_pickle("/home/insepien/research-data/alpaka/alpaka_39fits.pkl")
+    alpaka = pd.read_pickle("/home/insepien/research-data/alpaka/magellan/alpaka_39fits.pkl")
     redshift = np.mean(alpaka[alpaka['Desig']==args.oname]['Z'])
 
     # choose paper plot or analysis plot

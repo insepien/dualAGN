@@ -7,6 +7,8 @@ from photutils.isophote import Ellipse, EllipseGeometry
 from photutils.isophote.sample import CentralEllipseSample
 from photutils.isophote.fitter import CentralEllipseFitter
 from modelComponents import modelComps, makeModelDict
+import glob
+from astropy.io import fits
 
 
 def make_model_components(config,imshape):
@@ -25,6 +27,8 @@ def make_model_components(config,imshape):
             # fix pyimfit fault for fixed params
             if functions[j]['label'] =="bulge n=1":
                 functions[j]['parameters']['n'] = [1, "fixed"]
+            if functions[j]['label'] =="flat_sky":
+                functions[j]['parameters']['I_sky'] = [functions[j]['parameters']['I_sky'][0],"fixed"]
             # create dictionary for each component 
             funcset_dict = {'X0': posX, 'Y0': posY, 'function_list': [functions[j]]}
             model_dict = {'function_sets': [funcset_dict]}
@@ -93,12 +97,13 @@ if __name__=="__main__":
     with open (os.path.expanduser(psfPath), "rb") as fp:
         p = pickle.load(fp)
     epsf = p['psf'].data
-
+    # load image
+    cutoutPath = glob.glob(os.path.expanduser("/home/insepien/research-data/agn-result/box/kpcbox/*"+args.oname+"*.fits"))[0]
+    image = fits.getdata(cutoutPath)
     # load fit results
     fitPath = os.path.join(args.inDir, args.oname+".pkl")
     with open (os.path.expanduser(fitPath), "rb") as fd:
         d = pickle.load(fd)
-    image = d['imageSS']
     model_names = list(d['modelNames'].keys())
     configs = d['configs'] 
     model_images = d['modelImage']

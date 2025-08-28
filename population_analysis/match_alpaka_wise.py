@@ -7,35 +7,31 @@ from astropy.cosmology import Planck13 as cosmo
 import astropy.units as u
 import astropy.constants as const
 from scipy.interpolate import CubicSpline
+import scipy.interpolate as intp
 
 def get_wise_mags(wise_):
     """get wise mags and mag errors from data frame of ipac search results"""
     ## get wise mags and errors
-    w1mag = wise_['w1mpro']
     w2mag = wise_['w2mpro']
     w3mag = wise_['w3mpro']
     w4mag = wise_['w4mpro']
-    wmags_ = np.array([w1mag, w2mag, w3mag, w4mag])
-    wmags_err_ = np.array([wise_['w1sigmpro'], wise_['w2sigmpro'], wise_['w3sigmpro'], wise_['w4sigmpro']])
+    wmags_ = np.array([w2mag, w3mag, w4mag])
+    wmags_err_ = np.array([wise_['w2sigmpro'], wise_['w3sigmpro'], wise_['w4sigmpro']])
     return wmags_, wmags_err_
 
 
-def wise_lum_from_mag(wmags_, wmags_err_, obs_wavelength_, redshift_):
-    """calculate wise luminosity from magnitude at some observed wavelength"""
+def wise_lum_from_mag(wmags_, wmags_err_, rest_wavelength_, redshift_):
+    """calculate wise luminosity from magnitude at rest-frame wavelength"""
     ## change mags to fluxes -- http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec4_4h.html#example
-    zeromagflux = np.array([309.540, 171.787, 31.674, 8.363])*u.Jy
+    obs_wavelength_ = (1 + redshift_) * rest_wavelength_
+    zeromagflux = np.array([171.787, 31.674, 8.363])*u.Jy
     fluxdens = zeromagflux*10**(-wmags_/2.5) # in Jy
     # now either interpolate flux dens to some wavelength or use a band from wise
-    wise_wavelengths = np.array([3.4, 4.6, 12., 22.]) # 1e-6 m
-    if np.isin(obs_wavelength_, wise_wavelengths): # check if need to interpolate to non-wise wl
-        obs_flux = fluxdens[wise_wavelengths==obs_wavelength_][0]
-    else: # interpolate
-        fluxdens_err = zeromagflux*10**(-wmags_err_/2.5)
-        ## interpolate - use straight line
-        wiseflux = np.polyfit(wise_wavelengths, fluxdens.value,1, w=1./fluxdens_err)
-        ## get flux at obs wavelength, i.e. just a straight line here
-        obs_flux = (wiseflux[0]*obs_wavelength_+wiseflux[1])*u.Jy      
-    ## change to luminosity
+    wise_wavelengths = np.array([4.6, 12., 22.]) # 1e-6 m
+    ## interpolate spline
+    bspl = intp.make_interp_spline(np.log10(wise_wavelengths), np.log10(fluxdens.value),k=2)
+    ## get flux at obs wavelength, i.e. just a straight line here
+    obs_flux = 10**(bspl(np.log10(obs_wavelength_)))*u.Jy 
     obs_hz = (const.c/(obs_wavelength_*u.micron)).to(u.Hz)
     lum = (obs_flux*obs_hz*4*np.pi*
            cosmo.luminosity_distance(redshift_)**2).to(u.erg/u.s)
@@ -43,7 +39,8 @@ def wise_lum_from_mag(wmags_, wmags_err_, obs_wavelength_, redshift_):
 
 
 def correct_ir():
-    """correct IR luminosity at 15 microns rest frame based on Hopkins+20"""
+    """correct IR luminosity at 15 microns rest frame based on Hopkins+20
+        use cubic spline in log space of Lir vs Lbol"""
     # load hopkins bolometric correction
     with open("/home/insepien/research-data/pop-result/bc.txt","r") as f:
         d = f.read().splitlines()
@@ -63,16 +60,21 @@ def get_wise_ir_lums(cat,wl_=22):
     wmags_err = np.nan_to_num(wmags_err_nan,np.median(wmags_err_nan))
     # calculate luminosity
     wise_lums = np.zeros((len(cat)))
-    for i in range(0, len(cat)):
+    errors =[]
+    for i in cat.index.values:
         z = cat.loc[i,'Z']
-        wise_lums[i] = wise_lum_from_mag(wmags[:,i], wmags_err[:,i], wl_, z).value
+        try:
+            wise_lums[i] = wise_lum_from_mag(wmags[:,i], wmags_err[:,i], wl_, z).value
+        except:
+            wise_lums[i] = 0
+            errors.append(i)
     # check wavelength to see how to do bolo correction
     if wl_==15: # use Hopkins+2020 if at 15 microns
         spl = correct_ir()
         irbol = 10**(spl(np.log10(wise_lums)))
     else: # else correct by 12%
-        irbol = wise_lums*10**1.12
-    return wmags, wise_lums,irbol
+        irbol = wise_lums/0.1
+    return wmags, wise_lums,irbol, errors
 
 
 if __name__ == "__main__":
@@ -80,6 +82,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=("analysis of fit result script"),
                             formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("--savedf", action="store_true")
+    parser.add_argument("--outFile", type=str)
     args = parser.parse_args()
     # load Alpaka
     alpaka = Table(fits.getdata('/home/insepien/research-data/alpaka/ALPAKA_v1_withDes.fits')).to_pandas()
@@ -105,17 +108,18 @@ if __name__ == "__main__":
     print(f"Check 2:\n*****{sameRA}/{len(mdf)} have similar RA, {sameDEC}/{len(mdf)} have similar DEC in merged df")
 
     # calculate luminosities
-    wmag,wlum,wbol = get_wise_ir_lums(mdf,wl_=22)
+    wmag,wlum,wbol,errs = get_wise_ir_lums(mdf,wl_=15)
     # Check: magnitudes should be extracted correctly for each row
     unequal_mag_mask = ~(wmag[-1] == mdf['w4mpro'])
     print(f"Check 3:\n*****{unequal_mag_mask.sum()} targets have different wise mags")
     is_finite = np.isfinite(mdf[unequal_mag_mask]['w4mpro']).sum()
-    print(f"\n*****{is_finite}/{unequal_mag_mask.sum()} mismatches is finite. (if this is 0, all mismatches are NaN)")
-    
+    print(f"*****{is_finite}/{unequal_mag_mask.sum()} mismatches is finite. (if this is 0, all mismatches are NaN)")
+    # Check: erred indices whose Lbol was not calculated is due to no match in wise
+    print(f"Check 4: {len(errs)-np.isfinite(mdf.loc[errs]['w4mpro']).sum()}/{len(errs)} Lbol calculation errors are due to NaN Wise mags")
     # add luminosities to DF
     mdf['wiseLum'] = wlum
     mdf['irbol'] = wbol
     # save
     if args.savedf:
-        mdf.to_pickle("/home/insepien/research-data/alpaka/alpaka_z05_merged_wise.pkl")
+        mdf.to_pickle("/home/insepien/research-data/alpaka/"+args.outFile)
         print("Done saving merged DF")
