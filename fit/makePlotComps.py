@@ -116,9 +116,10 @@ if __name__=="__main__":
     midF=framelim//2
     
     # read guess sma
-    guess = pd.read_csv("~/research-data/agn-result/fit/guess.csv")
+    guess = pd.read_csv("guessVal_kpcbox.csv")
     gmask = guess['Name'] == args.oname
     sma = guess[gmask].values[0][1:].astype(float)[-1]
+    print(sma)
     # make 1D profile for data
     isolist_data = make_data_isophotes(data=image,sma=sma,midFrame=midF,pa0=args.pa)
     data_to_save = {}

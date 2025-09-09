@@ -237,7 +237,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
 
     ax[4].set_xlabel("R [kpc]")
     ax[4].set_ylabel("$\Delta$m") 
-    ax[4].set_ylim((-0.5,0.5))
+    ax[4].set_ylim((-0.15,0.15))
     ax[4].set_xlim((sma_kpc[1].value,15))
     ax[4].set_xscale('log')
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
@@ -417,7 +417,7 @@ if __name__=="__main__":
     with fits.open(mosfile) as hdul:
         hdu0 = hdul[0]
     
-    # get model names and sort index from best to worst chi reduced
+    # get model names and sort index from best to worst chi 
     model_names = list(d.keys())[:-2]
     sorted_ind = np.argsort([d[m].fit_result.fitStat for m in model_names])
     sorted_model_num = [np.where(sorted_ind==i)[0][0] for i in range(len(sorted_ind))]

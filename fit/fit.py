@@ -173,7 +173,7 @@ if __name__=="__main__":
         """
         script to fit AGN cutouts
         """), formatter_class=RawDescriptionHelpFormatter)
-    # parser.add_argument("--inDir", type=str, default="~/research-data/agn-result/fit/final_fit_nb/", help="path to cut out directory, cut out must be .fits")
+    parser.add_argument("--fitsDir", type=str, default="~/research-data/agn-result/box", help="path to cut out directory, cut out must be .fits")
     parser.add_argument("--oname", type=str, help="object name")
     parser.add_argument("--outDir", type=str, default="~/research-data/agn-result/fit/final_fit", help="output directory") 
     parser.add_argument("--psfPath", type=str, default="~/research-data/psf-results/psf_pkls", help="path to psf directory")
@@ -182,7 +182,7 @@ if __name__=="__main__":
     args = parser.parse_args()
     
     # load cutout image
-    cutoutPath = glob.glob(os.path.expanduser("/home/insepien/research-data/agn-result/box/kpcbox/*"+args.oname+"*.fits"))[0]
+    cutoutPath = glob.glob(os.path.expanduser(os.path.join(args.fitsDir, "*"+args.oname+"*.fits")))[0]
     imageAGN = fits.getdata(cutoutPath)
     # load psf file
     psf_fileName = "psf_"+args.oname+".pkl"
