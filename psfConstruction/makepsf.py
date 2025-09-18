@@ -1,19 +1,17 @@
 import numpy as np 
-import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.io import fits
 import os
 import pickle
+import glob
 
 from photutils.detection import find_peaks
-from photutils.aperture import CircularAperture
 from astropy.visualization import simple_norm
-from astropy.stats import sigma_clipped_stats
 from astropy.nddata import NDData
 from astropy.table import Table
 from photutils.psf import extract_stars
 from photutils.psf import EPSFBuilder
-from photutils import profiles
+
 
 # plot settings
 plt.rcParams['font.family'] = 'monospace'
@@ -136,15 +134,16 @@ if __name__ == "__main__":
         """
         script to construct ePSF from an exposure
         """), formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("--expPath", type=str, default="../../agn-data", help="path to exposures directory")
-    parser.add_argument("--inFile", type=str, help="exposure file")
+    parser.add_argument("--oname", type=str)
+    parser.add_argument("--outDir", type=str)
     parser.add_argument("--threshold", type=float, default=400.0, help="brightness threshold for stars used to construct PSF")
     parser.add_argument("--size", type=int, default=35, help="size of star cutout")
     parser.add_argument("--firstPass", action='store_true')
     parser.add_argument("--makePSF", action='store_true')
+    parser.add_argument("--plotStarPSF", action='store_true')
+    parser.add_argument("--saveStarPSF", action='store_true')
+    parser.add_argument("--starnum", type=int)
     args = parser.parse_args()
-    # get object name
-    objectName = args.inFile.split("_")[2]
     # get remove array
     with open("remove.txt", "r") as f:
         d = f.read().splitlines()   
@@ -153,7 +152,7 @@ if __name__ == "__main__":
         k,v = dd.split("__")
         r_dict[k]= v
     # get exposure data
-    expPath = os.path.join(args.expPath, args.inFile)
+    expPath = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     data = fits.getdata(expPath)
     # find peaks and remove duplicates, mark erred detections
     nodups, indices_to_drop = find_peaks_remove_dups(data,args.threshold)
@@ -163,23 +162,30 @@ if __name__ == "__main__":
     stars_tbl, stars = make_star_cutout(peaks_tbl,args)
     # plot star stamps
     if args.firstPass:
-        plot_erred_star_peaks(nodups,indices_to_drop,objectName)
-        starPath = "psf_plots/stars0/"+objectName+"_1_stars.jpg"
+        plot_erred_star_peaks(nodups,indices_to_drop,args.oname)
+        starPath = "psf_plots/stars0/"+args.oname+"_1_stars.jpg"
         plot_stars(stars,starPath)
-        print("Done first pass: ", args.inFile)
+        print("Done first pass: ", args.oname)
     else:
-        stars = drop_star_stamps(stars_tbl,r_dict[objectName].split(" "))
+        stars = drop_star_stamps(stars_tbl,r_dict[args.oname].split(" "))
         if args.makePSF:
             data_to_save = {}
             data_to_save['stars'] = stars
             data_to_save['psf'], data_to_save['fitted_stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
-            psfPath = "psf_pkls/psf_"+objectName+".pkl"
+            psfPath = "psf_pkls/psf_"+args.oname+".pkl"
             pickle.dump(data_to_save, open(psfPath, 'wb'))
-            print("Done make psf: ", args.inFile)
+            print("Done make psf: ", args.oname)
+        elif args.plotStarPSF: # extra a star stamp as the psf
+            norm = simple_norm(stars[args.starnum], 'log', percent=99.0)
+            plt.imshow(stars[args.starnum], norm=norm, origin='lower', cmap='viridis')
+            plt.colorbar()
+            plt.show()
+        elif args.saveStarPSF:
+            pickle.dump(stars[args.starnum], open(os.path.join(args.outDir,f"psf_{args.oname}_star{args.starnum}.pkl"),"wb"))
         else:
-            starPath = "psf_plots/stars_post/"+objectName+"_2_stars_post_selection.jpg"
+            starPath = "psf_plots/stars_post/"+args.oname+"_2_stars_post_selection.jpg"
             plot_stars(stars,starPath)
-            print("Done post star: ", args.inFile)
+            print("Done post star: ", args.oname)
         
             
     

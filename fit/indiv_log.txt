@@ -1,4 +1,7 @@
-Estimated background: -0.07617060095071793
-Guess vals:  45.0 0.5 3.0 69 70 70 70
-Fitting Models:   0%|          | 0/1 [00:00<?, ?it/s]Fitting Models: 100%|██████████| 1/1 [00:27<00:00, 27.74s/it]Fitting Models: 100%|██████████| 1/1 [00:27<00:00, 27.74s/it]
-Done:  J0813+0905
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:88: RuntimeWarning: divide by zero encountered in divide
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:88: RuntimeWarning: divide by zero encountered in log10
+  return -2.5*np.log10(intensity/area)+ magZPT
+/home/insepien/dualAGN/fit/plot_fit_with1d.py:88: RuntimeWarning: invalid value encountered in log10
+  return -2.5*np.log10(intensity/area)+ magZPT
+Done:  J1140+0918

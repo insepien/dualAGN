@@ -6,12 +6,12 @@ log_file="indiv_log.txt"
 # Clear the log file before running the script
 > "$log_file"
 
-objectName='J0813+0905'
+objectName='J1140+0918'
 
-python3 fit.py --oname "$objectName" --fit \
---fitsDir "/home/insepien/research-data/agn-result/box/kpcbox" \
---outDir "." \
->> "$log_file" 2>&1
+# python3 fit.py --oname "$objectName" --fit \
+# --fitsDir "/home/insepien/research-data/agn-result/box/kpcbox" \
+# --outDir "." \
+# >> "$log_file" 2>&1
 
 # python3 makePlotComps.py --oname "$objectName" \
 # --inDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_fit" \
@@ -19,13 +19,13 @@ python3 fit.py --oname "$objectName" --fit \
 # >> "$log_file" 2>&1
 
 # # --paper --outFile "${objectName}.png" --modelName "sersic+sersic,sersic" \
-# python3 plot_fit_with1d.py --oname "$objectName" \
-# --outDir "." \
-# --compDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_comp" \
-# --fitDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_fit/" \
-# --fitsDir "/home/insepien/research-data/agn-result/box/kpcbox/" \
-# --paper --outFile "${objectName}.png" --modelName "sersic,sersic" \
-#  >> "$log_file" 2>&1
+python3 plot_fit_with1d.py --oname "$objectName" \
+--outDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/paper" \
+--compDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_comp" \
+--fitDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_fit/" \
+--fitsDir "/home/insepien/research-data/agn-result/box/kpcbox/" \
+--paper --outFile "${objectName}.png" --modelName "sersic+psf,sersic" \
+ >> "$log_file" 2>&1
 
 
 
