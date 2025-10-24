@@ -6,7 +6,7 @@ log_file="indiv_log.txt"
 # Clear the log file before running the script
 > "$log_file"
 
-objectName='J1140+0918'
+objectName='J1138+0342'
 
 # python3 fit.py --oname "$objectName" --fit \
 # --fitsDir "/home/insepien/research-data/agn-result/box/kpcbox" \
@@ -24,7 +24,7 @@ python3 plot_fit_with1d.py --oname "$objectName" \
 --compDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_comp" \
 --fitDir "/home/insepien/research-data/agn-result/fit/fit_kpcbox/kpcbox_fit/" \
 --fitsDir "/home/insepien/research-data/agn-result/box/kpcbox/" \
---paper --outFile "${objectName}.png" --modelName "sersic+psf,sersic" \
+--paper --outFile "${objectName}_psf.png" --modelName "sersic+sersic(n1)+psf" \
  >> "$log_file" 2>&1
 
 

@@ -34,6 +34,16 @@ if __name__=="__main__":
     all_colors = sns.color_palette("colorblind", len(selmet))
     ### observation fractions
     fig,ax = plt.subplots(1,2,figsize=(11,5),dpi=500,sharex=True,sharey=True)
+
+    # magellan fraction
+    ndual=2
+    nsample=39
+    myfrac = ndual/nsample
+    err = np.array(scp.poisson.interval(0.95, ndual))/nsample
+    ax[0].scatter((0.14+0.22)/2,myfrac,
+                marker="*",s=120,c='k',label='This work, resolved')
+    ax[0].plot([(0.14+0.22)/2,(0.14+0.22)/2], err, c='k')
+
     for i in dfobs.index.values: # plot each row, viz label by selection
         ind = np.where(selmet == dfobs.loc[i]['selection'])[0][0]
         sym = all_markers[ind]
@@ -81,14 +91,6 @@ if __name__=="__main__":
         color = all_colors[ind]
         ax[0].plot(x,f,c=color,linestyle="--")
         ax[0].fill_between(x, err_l,err_u, alpha=0.2,color=color)
-    
-    # magellan fraction
-    ndual=2
-    nsample=39
-    myfrac = ndual/nsample
-    err = np.array(scp.poisson.interval(0.95, ndual))/nsample
-    ax[0].errorbar((0.14+0.22)/2,myfrac,yerr=[[myfrac-err[0]],[err[1]-myfrac]],
-                fmt="*",markersize=14,c='k',label='Our fraction')
 
     ### theoretical fractions, had to split up to 2 groups because data is not uniform
     # fractions with no error bars

@@ -4,4 +4,4 @@
   return -2.5*np.log10(intensity/area)+ magZPT
 /home/insepien/dualAGN/fit/plot_fit_with1d.py:88: RuntimeWarning: invalid value encountered in log10
   return -2.5*np.log10(intensity/area)+ magZPT
-Done:  J1140+0918
+Done:  J1138+0342

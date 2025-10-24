@@ -148,7 +148,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     [ax1.coords[i].set_major_formatter("dd:mm:ss") for i in range(2)]
     [ax1.coords[i].set_ticks_position(["b","l"][i]) for i in range(2)]
     [ax1.coords[i].set_axislabel(["RA","DEC"][i]) for i in range(2)]
-    [ax1.coords[i].set_ticklabel(size=13) for i in range(2)]
+    [ax1.coords[i].set_ticklabel(size=13,exclude_overlapping=True) for i in range(2)]
     ax2 = fig.add_subplot(gs[:, 1],xticks=[],yticks=[])
     ax3 = fig.add_subplot(gs[:, 2],xticks=[],yticks=[])
     ax4a = fig.add_subplot(gs[0, 3]) 
@@ -166,7 +166,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
                        cmap=cmapp)
     # putting model positions on
     [[ax[j].plot(comp_pos[i][0]-1, comp_pos[i][1]-1, 
-            marker='x',markersize=5, color=["k","k","w"][j],alpha=["",0.1,0.5][j]) for i in range(len(comp_pos))] for j in [1,2]]
+            marker='x',markersize=5, color=["k","k","w"][j],alpha=["",0.3,0.8][j]) for i in [0,-1]] for j in [1,2]]
     # append colorbars outside frame
     # data
     div = [make_axes_locatable(ax[i]) for i in range(3)]
@@ -255,7 +255,7 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
         pix_len = aslen/0.16
         start = image.shape[0]*0.9 - pix_len
         ax[0].plot([start,start+pix_len],[start,start],c='w')
-        ax[0].text(start,start+5,'5 kpc',c='w',fontsize=13)
+        ax[0].text(start-5,start+5,'5 kpc',c='w',fontsize=13)
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
     else: # innclude model names, chi val, chi test info, 10kpc isophote, midframe point
         # formatting model name
