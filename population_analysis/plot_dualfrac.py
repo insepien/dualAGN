@@ -20,10 +20,11 @@ if __name__=="__main__":
     parser.add_argument("--inDir", type=str, default="/home/insepien/research-data/pop-result/lit_rev_frac/", help="input directory")
     parser.add_argument("--inFile", type=str, default="dualfrac_rev2.csv", help="input dual fraction csv")
     parser.add_argument("--outFile", type=str, default="dualfrac.png")
+    parser.add_argument("--numskiprow", type=int, default=0)
     
     args = parser.parse_args()
     # load obs fracs and remove any nan fraction rows
-    dfr = pd.read_csv(args.inDir+args.inFile)
+    dfr = pd.read_csv(args.inDir+args.inFile, skiprows=args.numskiprow)
     dfr_agn = dfr[~ dfr['lower dual frac'].isna()]
     dfobs = dfr_agn[~(dfr_agn['selection']=='cosmological simulation')]
     # define markers and colors
@@ -94,12 +95,12 @@ if __name__=="__main__":
 
     ### theoretical fractions, had to split up to 2 groups because data is not uniform
     # fractions with no error bars
-    for f,l,i in zip(['volonteri2022.csv','yu2011.csv'],['Volonteri+2022','Yu+2011'],range(2)):
+    for f,l,i in zip(['volonteri2022.csv','yu2011.csv'],['HORIZON-AGN','D-peak phenom.'],range(2)):
         path = args.inDir + f
         d = pd.read_csv(path,header=None,names=['z',"f"])
         ax[1].plot(d['z'],d['f'],marker=all_markers[i],c=all_colors[i],label=l)
     # fractions with upper error saved
-    for f,l,i in zip(['chen2023.csv','rosa2019.csv'],['Chen+2023','Rosas-Guevara+2019'],range(2,4)):
+    for f,l,i in zip(['chen2023.csv','rosa2019.csv'],['Astrid','EAGLE'],range(2,4)):
         path = args.inDir + f
         df = pd.read_csv(path,header=None,names=['z',"f"])
         # sort to find lw--up error later
@@ -112,7 +113,7 @@ if __name__=="__main__":
         ax[1].fill_between(x, f-err,f+err, alpha=0.3,color=all_colors[i])
     # add 1 data point from steinborn
     sb = [2,0.005, 0.00214592, 0.00804721]
-    ax[1].errorbar(sb[0],sb[1],yerr=[[sb[-2]],[sb[-1]]],fmt=all_markers[4],c=all_colors[4],label='Steinborn+2016')
+    ax[1].errorbar(sb[0],sb[1],yerr=[[sb[-2]],[sb[-1]]],fmt=all_markers[4],c=all_colors[4],label='Magneticum')
     # formatting ticks
     ax[0].set_xscale("log")
     ax[0].set_yscale('log')
