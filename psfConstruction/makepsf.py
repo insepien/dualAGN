@@ -4,6 +4,7 @@ from astropy.io import fits
 import os
 import pickle
 import glob
+from matplotlib.backends.backend_pdf import PdfPages
 
 from photutils.detection import find_peaks
 from astropy.visualization import simple_norm
@@ -47,7 +48,7 @@ def find_peaks_remove_dups(data,Imin):
     return nodups, indices_to_drop
     
 
-def plot_erred_star_peaks(nodups,indices_to_drop,objectName):
+def plot_erred_star_peaks(nodups,indices_to_drop,objectName,pdf):
     """save plot of duplicates detections that turns out to be erred stars"""
     nodups.loc[indices_to_drop].sort_values('x_peak')
     ncols = 6
@@ -63,9 +64,8 @@ def plot_erred_star_peaks(nodups,indices_to_drop,objectName):
     [ax[-i].axis('off') for i in range(1,len(ax)-len(indices_to_drop)+1)]
     fig.suptitle("Erred and duplicate detections of peaks",y=1.0)
     fig.tight_layout()
-    #savepath = os.pathlib.join(
-    savepath="psf_plots/erred_stars/"+objectName+"_0_erred_stars.jpg"
-    fig.savefig(savepath,bbox_inches="tight",dpi=300)
+    pdf.savefig(bbox_inches="tight")
+    plt.close()
 
     
 def drop_erred_peaks(nodups, indices_to_drop):
@@ -74,7 +74,7 @@ def drop_erred_peaks(nodups, indices_to_drop):
     return peaks_tbl
 
 
-def plot_stars(stars,savepath):
+def plot_stars(stars,pdf):
     """plotting a table of star stamps"""
     nrows = int(np.ceil(len(stars)/4))
     ncols = 4
@@ -91,7 +91,10 @@ def plot_stars(stars,savepath):
     [ax[-i].axis('off') for i in np.arange(1,empty_axes+1)]
     fig.suptitle("Star ensemble for ePSF construction",y=1)
     fig.tight_layout()
-    fig.savefig(savepath,bbox_inches="tight",dpi=300)
+    if args.firstPass:
+        pdf.savefig(bbox_inches="tight")
+    else:
+        fig.savefig(pdf)
 
 
 def make_star_cutout(peaks_tbl, args):
@@ -133,26 +136,46 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=(
         """
         script to construct ePSF from an exposure
+        1. to do a first pass, i.e. just detect sources
+                python makepsf.py --oname [obj name] --firstPass --outDir_starini [path to initially-selected star plots]
         """), formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("--oname", type=str)
-    parser.add_argument("--outDir", type=str)
-    parser.add_argument("--threshold", type=float, default=400.0, help="brightness threshold for stars used to construct PSF")
-    parser.add_argument("--size", type=int, default=35, help="size of star cutout")
+    parser.add_argument("--mosPath", help='optionalpath to dir with mos.fits file, used for re-reduction files')
     parser.add_argument("--firstPass", action='store_true')
+    parser.add_argument("--outDir_starini", type=str, help='output directory to save plots of initially-selected stars')
+    """optionally can change point source detection params"""
+    parser.add_argument("--threshold", type=float, default=400.0, help="intensity threshold for peak detection")
+    parser.add_argument("--size", type=int, default=35, help="size of star cutout")
+    """2. for a second pass, remove bad stars after visual inspection and save star plot.
+            bad stars' indices are in remove.txt
+                python makepsf.py --oname [objname] --outDir_starpost [dir]
+            After inspecting the post-selected star, can make psf by
+                python makepsf.py --oname [objname] --outDir_PSF [dir]"""
+    parser.add_argument("--outDir_starpost", type=str, help='output directory to save plots of final star ensemble')
     parser.add_argument("--makePSF", action='store_true')
-    parser.add_argument("--plotStarPSF", action='store_true')
-    parser.add_argument("--saveStarPSF", action='store_true')
-    parser.add_argument("--starnum", type=int)
+    parser.add_argument("--outDir_PSF", type=str, help='output directory to save the PSF')
+    """3. can also save a star cutout as a PSF. look at it first by
+                python makepsf.py --plotStarPSF --starnum [#]
+            then save by
+                python makepsf.py --saveStarPSF --starnum [#] --outDir_PSF [dir]"""
+    parser.add_argument("--starnum", type=int, help='star number to save as PSF')
+    parser.add_argument("--plotStarPSF", action='store_true', help="option to plot a star")
+    parser.add_argument("--saveStarPSF", action='store_true', help="option to save the star")
     args = parser.parse_args()
-    # get remove array
+
+    # get array of source index to remove
     with open("remove.txt", "r") as f:
         d = f.read().splitlines()   
     r_dict = {}
     for dd in d:
         k,v = dd.split("__")
         r_dict[k]= v
-    # get exposure data
-    expPath = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
+
+    # read exposure data
+    if args.mosPath:
+        expPath = glob.glob(os.path.expanduser(args.mosPath+"/*"+args.oname+"*.mos.fits"))[0]
+    else:
+        expPath = glob.glob(os.path.expanduser("~/raw-data-agn/mos-fits-agn/*"+args.oname+"*.mos.fits"))[0]
     data = fits.getdata(expPath)
     # find peaks and remove duplicates, mark erred detections
     nodups, indices_to_drop = find_peaks_remove_dups(data,args.threshold)
@@ -161,29 +184,35 @@ if __name__ == "__main__":
     # make star stamps
     stars_tbl, stars = make_star_cutout(peaks_tbl,args)
     # plot star stamps
-    if args.firstPass:
-        plot_erred_star_peaks(nodups,indices_to_drop,args.oname)
-        starPath = "psf_plots/stars0/"+args.oname+"_1_stars.jpg"
-        plot_stars(stars,starPath)
+    if args.firstPass: #first pass before visually inspecting and removing "bad" sources
+        # pdf to save both erred peaks and detected sources
+        with PdfPages(os.path.join(args.outDir_starini,args.oname+"_ini_.pdf")) as pdf:
+            # save the auto-detected erred peaks for sanity check
+            plot_erred_star_peaks(nodups,indices_to_drop,args.oname,pdf)
+            # save star stamps
+            plot_stars(stars,pdf)
         print("Done first pass: ", args.oname)
-    else:
+    else: #second pass, removing star with index from remove.txt
         stars = drop_star_stamps(stars_tbl,r_dict[args.oname].split(" "))
-        if args.makePSF:
+        if args.makePSF: # option to make the PSF
             data_to_save = {}
             data_to_save['stars'] = stars
             data_to_save['psf'], data_to_save['fitted_stars'] = build_psf(stars,1,shp=(args.size,args.size),k='quartic')
-            psfPath = "psf_pkls/psf_"+args.oname+".pkl"
-            pickle.dump(data_to_save, open(psfPath, 'wb'))
+            psfPath = open(os.path.join(args.outDir_PSF,f"psf_"+args.oname+".pkl"),"wb")
+            pickle.dump(data_to_save, psfPath)
             print("Done make psf: ", args.oname)
-        elif args.plotStarPSF: # extra a star stamp as the psf
+            plt.imshow(data_to_save['psf'].data)
+            plt.show()
+        elif args.plotStarPSF: # extract a star stamp and plot
             norm = simple_norm(stars[args.starnum], 'log', percent=99.0)
             plt.imshow(stars[args.starnum], norm=norm, origin='lower', cmap='viridis')
             plt.colorbar()
             plt.show()
-        elif args.saveStarPSF:
-            pickle.dump(stars[args.starnum], open(os.path.join(args.outDir,f"psf_{args.oname}_star{args.starnum}.pkl"),"wb"))
-        else:
-            starPath = "psf_plots/stars_post/"+args.oname+"_2_stars_post_selection.jpg"
+        elif args.saveStarPSF: # save star stamp as psf
+            pickle.dump(stars[args.starnum], open(os.path.join(args.outDir_PSF,f"psf_{args.oname}_star{args.starnum}.pkl"),"wb"))
+            print(f"Done saving star {args.starnum} as psf: ", args.oname)
+        else: # only remove stars and plot post-selected ones
+            starPath = open(os.path.join(args.outDir_starpost,f"{args.oname}_post_.jpg"),"wb")
             plot_stars(stars,starPath)
             print("Done post star: ", args.oname)
         
