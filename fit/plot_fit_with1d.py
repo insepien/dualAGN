@@ -243,11 +243,22 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
     [ax.yaxis.set_label_position('right') for ax in [ax4a,ax4b]]
     [ax.yaxis.set_ticks_position('right') for ax in [ax4a,ax4b]]
 
+    # formatting model name
+    modelname = modelname.replace("sersic",rf"S\'ersic").replace("psf","PSF").replace("exp","Exponential").replace("n1","n=1")
+    if len(modelname) > 16 and ',' in modelname:
+        modelname.replace('\n','')
+        modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
+
     # paper or big plot
     if args.paper: # no model name or chi val in frame title
-        [ax[i].set_title([args.oname,
-                    f"Model",
+        if args.addModelName:
+            [ax[i].set_title([args.oname,
+                    f"{modelname}",
                     'Residual'][i]) for i in range(3)]
+        else:
+            [ax[i].set_title([args.oname,
+                        f"Model",
+                        'Residual'][i]) for i in range(3)]
         # 2d colorbar
         [cbr.set_label("Intensity [counts/pix]",fontsize=13) for cbr in [cbr1,cbr2]]
         # putting 5 kpc line on
@@ -258,11 +269,6 @@ def plot_everything(pdf, wcs, image, model_, rp_params_, model_index, isolist_da
         ax[0].text(start-5,start+5,'5 kpc',c='w',fontsize=13)
         fig.savefig(os.path.expanduser(os.path.join(args.outDir,args.outFile)),bbox_inches='tight', pad_inches=0.2)
     else: # innclude model names, chi val, chi test info, 10kpc isophote, midframe point
-        # formatting model name
-        modelname = modelname.replace("sersic",rf"S\'ersic").replace("psf","PSF").replace("exp","Exponential").replace("n1","n=1")
-        if len(modelname) > 16 and ',' in modelname:
-            modelname.replace('\n','')
-            modelname = modelname.split(",")[0]+',\n'+modelname.split(",")[1]
         [ax[i].set_title([args.oname,
                     f"Model {model_index}:\n{modelname}",
                     f'Residual,\n$\chi^2_r$={fsr:.3f}\n$\chi^2$={fs:.0f}'][i]) for i in range(3)]
@@ -392,6 +398,7 @@ if __name__=="__main__":
     parser.add_argument('--cmap', type=str, default="ch:s=-.3,r=.6")
     # args for paper plot
     parser.add_argument("--paper", action='store_true', help="flag to make plot for paper")
+    parser.add_argument("--addModelName", action='store_true', help="flag to add model name to plot")
     parser.add_argument("--modelName", type=str, help='model name for paper plot')
     args = parser.parse_args()
     # load fit file to get sersic index for component plots
